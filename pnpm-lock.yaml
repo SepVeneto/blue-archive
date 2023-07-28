@@ -12,6 +12,9 @@ devDependencies:
   '@vitejs/plugin-vue':
     specifier: ^4.2.3
     version: 4.2.3(vite@4.4.6)(vue@3.3.4)
+  lil-gui:
+    specifier: ^0.18.2
+    version: 0.18.2
   vite:
     specifier: ^4.4.5
     version: 4.4.6
@@ -369,6 +372,10 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /lil-gui@0.18.2:
+    resolution: {integrity: sha512-DgdrLy3/KGC0PiQLKgOcJMPItP4xY4iWgJ9+91Zaxfr8GCTmMps05QS9w9jW7yspILlbscbquwjOwxmWnSx5Uw==}
+    dev: true
 
   /magic-string@0.30.1:
     resolution: {integrity: sha512-mbVKXPmS0z0G4XqFDCTllmDQ6coZzn94aMlb0o/A4HEHJCKcanlDZwYJgwnkmgD3jyWhUgj9VsPrfd972yPffA==}
