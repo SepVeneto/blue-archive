@@ -1,235 +1,62 @@
 import * as THREE from 'three'
 
 const vertexShader = `
-#define STANDARD
-
-varying vec3 vViewPosition;
-
-#ifndef FLAT_SHADED
-
-	varying vec3 vNormal;
-
-	#ifdef USE_TANGENT
-
-		varying vec3 vTangent;
-		varying vec3 vBitangent;
-
-	#endif
-
-#endif
-
-#ifdef USE_TRANSMISSION
-
-	varying vec4 vWorldPosition;
-
-#endif
-
-#include <common>
-#include <uv_pars_vertex>
-#include <uv2_pars_vertex>
-#include <displacementmap_pars_vertex>
-#include <color_pars_vertex>
-#include <fog_pars_vertex>
-#include <morphtarget_pars_vertex>
 #include <skinning_pars_vertex>
-#include <shadowmap_pars_vertex>
-#include <logdepthbuf_pars_vertex>
-#include <clipping_planes_pars_vertex>
+
+varying vec2 vUv;
 
 void main() {
-
-	#include <uv_vertex>
-	#include <uv2_vertex>
-	#include <color_vertex>
-
-	#include <beginnormal_vertex>
-	#include <morphnormal_vertex>
 	#include <skinbase_vertex>
-	#include <skinnormal_vertex>
-	#include <defaultnormal_vertex>
-
-#ifndef FLAT_SHADED // Normal computed with derivatives when FLAT_SHADED
-
-	vNormal = normalize( transformedNormal );
-
-	#ifdef USE_TANGENT
-
-		vTangent = normalize( transformedTangent );
-		vBitangent = normalize( cross( vNormal, vTangent ) * tangent.w );
-
-	#endif
-
-#endif
-
 	#include <begin_vertex>
-	#include <morphtarget_vertex>
 	#include <skinning_vertex>
-	#include <displacementmap_vertex>
 	#include <project_vertex>
-	#include <logdepthbuf_vertex>
-	#include <clipping_planes_vertex>
 
-	vViewPosition = - mvPosition.xyz;
-
-	#include <worldpos_vertex>
-	#include <shadowmap_vertex>
-	#include <fog_vertex>
-
-#ifdef USE_TRANSMISSION
-
-	vWorldPosition = worldPosition;
-
-#endif
+  vUv = uv;
 }
 `
+const fragmentParmas = `
+uniform vec2 mouth_offset;
+uniform sampler2D mouth_texture;
+`
+
+const fragmentStart = `
+vec4 c = diffuseColor * texture2D(mouth_texture, vMapUv + mouth_offset);
+vec4 mouthColor = c;
+`
+
+const fragmentEnd = `
+float alpha = diffuseColor.a;
+if (alpha == 0.0) {
+  diffuseColor = mouthColor;
+} else {
+  diffuseColor.a = 1.0;
+}
+`
+
 const fragmentShader = `
-#define STANDARD
-
-#ifdef PHYSICAL
-	#define REFLECTIVITY
-	#define CLEARCOAT
-	#define SPECULAR
-#endif
-
-uniform vec3 diffuse;
-uniform vec3 emissive;
-uniform float roughness;
-uniform float metalness;
-uniform float opacity;
-
-#ifdef USE_TRANSMISSION
-	uniform float transmission;
-	uniform float thickness;
-	uniform float attenuationDistance;
-	uniform vec3 attenuationTint;
-#endif
-
-#ifdef REFLECTIVITY
-	uniform float reflectivity;
-#endif
-
-#ifdef SPECULAR
-	uniform float specularIntensity;
-	uniform vec3 specularTint;
-
-	#ifdef USE_SPECULARINTENSITYMAP
-		uniform sampler2D specularIntensityMap;
-	#endif
-
-	#ifdef USE_SPECULARTINTMAP
-		uniform sampler2D specularTintMap;
-	#endif
-#endif
-
-#ifdef CLEARCOAT
-	uniform float clearcoat;
-	uniform float clearcoatRoughness;
-#endif
-
-#ifdef USE_SHEEN
-	uniform vec3 sheen;
-#endif
-
-varying vec3 vViewPosition;
-
-#ifndef FLAT_SHADED
-
-	varying vec3 vNormal;
-
-	#ifdef USE_TANGENT
-
-		varying vec3 vTangent;
-		varying vec3 vBitangent;
-
-	#endif
-
-#endif
-
-#include <common>
-#include <packing>
-#include <dithering_pars_fragment>
-#include <color_pars_fragment>
-#include <uv_pars_fragment>
-#include <uv2_pars_fragment>
-#include <map_pars_fragment>
-#include <alphamap_pars_fragment>
-#include <aomap_pars_fragment>
-#include <lightmap_pars_fragment>
-#include <emissivemap_pars_fragment>
-#include <bsdfs>
-#include <transmission_pars_fragment>
-#include <cube_uv_reflection_fragment>
-#include <envmap_common_pars_fragment>
-#include <envmap_physical_pars_fragment>
-#include <fog_pars_fragment>
-#include <lights_pars_begin>
-#include <lights_physical_pars_fragment>
-#include <shadowmap_pars_fragment>
-#include <bumpmap_pars_fragment>
-#include <normalmap_pars_fragment>
-#include <clearcoat_pars_fragment>
-#include <roughnessmap_pars_fragment>
-#include <metalnessmap_pars_fragment>
-#include <logdepthbuf_pars_fragment>
-#include <clipping_planes_pars_fragment>
-
-void main() {
-
-	#include <clipping_planes_fragment>
-
-	vec4 diffuseColor = vec4( diffuse, opacity );
-	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
-	vec3 totalEmissiveRadiance = emissive;
-
-	#include <logdepthbuf_fragment>
-	#include <map_fragment>
-	#include <color_fragment>
-	#include <alphamap_fragment>
-	#include <alphatest_fragment>
-	#include <roughnessmap_fragment>
-	#include <metalnessmap_fragment>
-	#include <normal_fragment_begin>
-	#include <normal_fragment_maps>
-	#include <clearcoat_normal_fragment_begin>
-	#include <clearcoat_normal_fragment_maps>
-	#include <emissivemap_fragment>
-
-	// accumulation
-	#include <lights_physical_fragment>
-	#include <lights_fragment_begin>
-	#include <lights_fragment_maps>
-	#include <lights_fragment_end>
-
-	// modulation
-	#include <aomap_fragment>
-
-	vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
-	vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
-
-	#include <transmission_fragment>
-
-	vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;
-
-	gl_FragColor = vec4( outgoingLight, diffuseColor.a );
-
-	#include <tonemapping_fragment>
-	#include <encodings_fragment>
-	#include <fog_fragment>
-	#include <premultiplied_alpha_fragment>
-	#include <dithering_fragment>
-
-}
 `
 
-export function createFace() {
-  return new THREE.ShaderMaterial({
-    transparent: true,
-    uniforms: {
-      texture1: { value: null},
-      texture2: { value: null },
-      offset: { value: new THREE.Vector2(0, 0) },
-    },
-    vertexShader,
-    fragmentShader,
-  })
+export function createFace(material, uniforms = {} ) {
+  THREE.ShaderChunk['face_mix_pars_fragment'] = fragmentParmas
+  THREE.ShaderChunk['face_mix_fragment_start'] = fragmentStart
+  THREE.ShaderChunk['face_mix_fragment_end'] = fragmentEnd
+
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms)
+    const shaderList = shader.fragmentShader.split('\n')
+    shaderList.splice(0, 0, '#include <face_mix_pars_fragment>')
+    const index = shaderList.findIndex(item => item.includes('#include <map_fragment>'))
+    shaderList.splice(index, 0, '#include <face_mix_fragment_start>')
+    const i = shaderList.findIndex(item => item.includes('#include <alphamap_fragment>'))
+    shaderList.splice(i + 1, 0, '#include <face_mix_fragment_end>')
+    // shaderList.splice(-1, 0, `
+    //   if (gl_FragColor.a > 0.0) {
+    //     gl_FragColor.a = 1.0;
+    //   }
+    // `)
+
+    shader.fragmentShader = shaderList.join('\n')
+    console.log(shader.fragmentShader, shader)
+  }
 }
+
