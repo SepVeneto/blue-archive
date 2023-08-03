@@ -1,49 +1,35 @@
 import * as THREE from 'three'
 
-const vertexShader = `
-#include <skinning_pars_vertex>
+const fragmentParmas = `
+uniform vec2 mouth_offset;
+uniform sampler2D mouth_texture;
+`
 
-varying vec2 vUv;
+const fragmentStart = `
+vec4 mouthColor = diffuseColor * texture2D(mouth_texture, vMapUv + mouth_offset);
+`
 
-void main() {
-	#include <skinbase_vertex>
-	#include <begin_vertex>
-	#include <skinning_vertex>
-	#include <project_vertex>
-
-  vUv = uv;
+const fragmentEnd = `
+float alpha = diffuseColor.a;
+if (alpha == 0.0) {
+  diffuseColor = mouthColor;
 }
 `
-const fragmentShader = `
-varying vec2 vUv;
-uniform vec2 offset;
-uniform sampler2D texture1;
-uniform sampler2D texture2;
 
-void main()
-{
-  vec4 color1 = texture2D(texture1, vUv);
-  vec4 color2 = texture2D(texture2, vUv + offset);
+export function createFace(material, uniforms = {} ) {
+  THREE.ShaderChunk['face_mix_pars_fragment'] = fragmentParmas
+  THREE.ShaderChunk['face_mix_fragment_start'] = fragmentStart
+  THREE.ShaderChunk['face_mix_fragment_end'] = fragmentEnd
 
-  float alpha = color1.a;
-
-  if (alpha < 0.8) {
-    gl_FragColor = color2;
-  } else {
-    gl_FragColor = color1;
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms)
+    const shaderList = shader.fragmentShader.split('\n')
+    shaderList.splice(0, 0, '#include <face_mix_pars_fragment>')
+    const index = shaderList.findIndex(item => item.includes('#include <map_fragment>'))
+    shaderList.splice(index, 0, '#include <face_mix_fragment_start>')
+    // 不跟mouth的采样写在一起是因为那个时候纹理还没有进行采样，无法得到alpha值
+    const i = shaderList.findIndex(item => item.includes('#include <alphamap_fragment>'))
+    shaderList.splice(i + 1, 0, '#include <face_mix_fragment_end>')
+    shader.fragmentShader = shaderList.join('\n')
   }
-}
-`
-
-export function createFace() {
-  return new THREE.ShaderMaterial({
-    transparent: true,
-    uniforms: {
-      texture1: { value: null},
-      texture2: { value: null },
-      offset: { value: new THREE.Vector2(0, 0) },
-    },
-    vertexShader,
-    fragmentShader,
-  })
 }

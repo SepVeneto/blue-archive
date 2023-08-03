@@ -27,11 +27,10 @@ void main()
 
   `
 
-  const geometry = new THREE.PlaneBufferGeometry(2, 2)
+  const geometry = new THREE.PlaneGeometry(2, 2)
 
   const material = new THREE.ShaderMaterial({
-    wireframe: false,
-    transparent: false,
+    // wireframe: true,
     uniforms: {
       tBackground: { value: null },
     },
@@ -39,19 +38,25 @@ void main()
     fragmentShader: fragment,
   })
 
-  const topLeft = new THREE.Color('#f5883c')
-  const topRight = new THREE.Color('#ff9043')
-  const bottomRight = new THREE.Color('#fccf92')
-  const bottomLeft = new THREE.Color('#f5aa58')
+  const topLeft = {}
+  new THREE.Color('#f5883c').getRGB(topLeft, THREE.SRGBColorSpace)
+  const topRight = {}
+  new THREE.Color('#ff9043').getRGB(topRight, THREE.SRGBColorSpace)
+  const bottomRight = {}
+  new THREE.Color('#fccf92').getRGB(bottomRight, THREE.SRGBColorSpace)
+  const bottomLeft = {}
+  new THREE.Color('rgb(245,170,88)').getRGB(bottomLeft, THREE.SRGBColorSpace)
+  console.log(bottomLeft)
   const data = new Uint8Array([
-    Math.round(bottomLeft.r * 255), Math.round(bottomLeft.g * 255), Math.round(bottomLeft.b * 255),
-    Math.round(bottomRight.r * 255), Math.round(bottomRight.g * 255), Math.round(bottomRight.b * 255),
-    Math.round(topLeft.r * 255), Math.round(topLeft.g * 255), Math.round(topLeft.b * 255),
-    Math.round(topRight.r * 255), Math.round(topRight.g * 255), Math.round(topRight.b * 255),
+    Math.round(bottomLeft.r * 255), Math.round(bottomLeft.g * 255), Math.round(bottomLeft.b * 255), 255,
+    Math.round(bottomRight.r * 255), Math.round(bottomRight.g * 255), Math.round(bottomRight.b * 255), 255,
+    Math.round(topLeft.r * 255), Math.round(topLeft.g * 255), Math.round(topLeft.b * 255), 255,
+    Math.round(topRight.r * 255), Math.round(topRight.g * 255), Math.round(topRight.b * 255), 255,
   ])
   // 2 * 2的像素矩阵，每个像素对应上面每四个元素组合成的rgba
-  const backgroundTexture = new THREE.DataTexture(data, 2, 2, THREE.RGBFormat)
+  const backgroundTexture = new THREE.DataTexture(data, 2, 2)
   backgroundTexture.magFilter = THREE.LinearFilter
+  backgroundTexture.needsUpdate = true
 
   // material.needsUpdate = true
   material.uniforms.tBackground.value = backgroundTexture
