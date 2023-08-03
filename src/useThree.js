@@ -19,6 +19,9 @@ const settings = {
   'ex': playEx,
   'move': playMove,
   'mouth': 0,
+  'modify callsign weight': 0,
+  'modify moveing weight': 0,
+  'modify endstand weight': 1,
 }
 const mouths = [
   new THREE.Vector2(0, 0),
@@ -47,6 +50,10 @@ gui.add(settings, 'cafe idle')
 gui.add(settings, 'cafe reaction')
 gui.add(settings, 'ex')
 gui.add(settings, 'move')
+gui.add(settings, 'modify callsign weight', 0, 1, 0.01).listen()
+gui.add(settings, 'modify moveing weight', 0, 1, 0.01).listen()
+gui.add(settings, 'modify endstand weight', 0, 1, 0.01).listen()
+
 gui.add(settings, 'mouth', mouths.reduce((obj, curr, i) => {
   obj[i] = curr
   return obj
@@ -54,22 +61,52 @@ gui.add(settings, 'mouth', mouths.reduce((obj, curr, i) => {
   uniforms.mouth_offset.value = val
   // m.needsUpdate = true
 })
+
+let callsign
+let moveing
+let endstand
+
 function playMove() {
   if (isAnimatePlay) {
     mixer.stopAllAction()
     isAnimatePlay = false
     playCafeReaction()
   } else {
-    const actions = [Hina.MOVE_CALLSIGN, Hina.MOVE_ING, Hina.MOVE_END_STAND]
-    let current = 0
-    mixer.addEventListener('finished', () => {
-      current += 1
-      const type = actions[current]
-      if (!type) return
-      play(type)
+    // callsign = mixer.clipAction(animations[Hina.MOVE_CALLSIGN])
+    // callsign.name = 'callsign'
+    // // callsign.loop = THREE.LoopOnce
+    // callsign.play()
+    // callsign.weight = 1
+    moveing = mixer.clipAction(animations[Hina.MOVE_ING])
+    moveing.name = 'moveing'
+    moveing.play()
+    // moveing.play()
+    moveing.weight = 1
+    endstand = mixer.clipAction(animations[Hina.MOVE_END_STAND])
+    endstand.play()
+    endstand.loop = THREE.LoopOnce
+    endstand.weight = 0
 
-    })
-    play(Hina.MOVE_CALLSIGN)
+    let currentAction = callsign
+
+    // const actions = [Hina.MOVE_CALLSIGN, Hina.MOVE_ING, Hina.MOVE_END_STAND]
+    syncCrossFade(moveing, endstand, 0)
+    let current = 0
+    function syncCrossFade(startAction, endAction, duration) {
+      mixer.addEventListener('loop', onLoopFinished)
+      function onLoopFinished(event) {
+        if (event.action === startAction) { 
+          mixer.removeEventListener('loop', onLoopFinished)
+
+          endAction.setEffectiveTimeScale(1)
+          endAction.setEffectiveWeight(1)
+          endAction.time = 0
+
+          startAction.crossFadeTo(endAction, duration, true)
+        }
+      }
+    }
+    // play(Hina.MOVE_CALLSIGN)
   }
 }
 function play(type) {
@@ -147,16 +184,68 @@ export function useThree(dom) {
     // ++i
     // if (i === 160) i = 0
 
+    callsign && (settings['modify callsign weight'] = callsign.getEffectiveWeight())
+    moveing && (settings['modify moveing weight'] = moveing.getEffectiveWeight())
+    endstand && (settings['modify endstand weight'] = endstand.getEffectiveWeight())
+
+    if (forward) {
+      hina.position.z -= 0.001
+      camera.position.z -= 0.001
+      controls.target.z -= 0.001
+    }
+    if (left) {
+      hina.position.x -= 0.001
+      camera.position.x -= 0.001
+      controls.target.x -= 0.001
+    }
+
 	  renderer.render( scene, camera );
   }
+  let forward = false
+  let left = false
+  let hina
+  let controls
+  let dir = 'frontend'
 
   onMounted(async () => {
+    document.addEventListener('keydown', (evt) => {
+      if (evt.key.toLowerCase() === 'w') {
+        forward = true
+        dir = 'frontend'
+      }
+      if (evt.key.toLowerCase() === 'a') {
+        left = true
+        hina.setRotationFromEuler(Math.PI / 2)
+        dir = 'left'
+      }
+    })
+    document.addEventListener('keyup', (evt) => {
+      if (evt.key.toLowerCase() === 'w') {
+        forward = false
+      }
+      if (evt.key.toLowerCase() === 'a') {
+        left = false
+      }
+    })
     dom.value.appendChild( renderer.domElement );
-    const controls = new OrbitControls(camera, renderer.domElement)
+    controls = new OrbitControls(camera, renderer.domElement)
 
     const gltf = await loadGltf('/Hina_Original/Hina_Original.gltf')
     animations = gltf.animations
     const obj = gltf.scene
+    hina = obj
+
+    if (hina) {
+      switch(dir) {
+        case 'left':
+          console.log(hina.rotation)
+          hina.setRotationFromAxisAngle(Math.PI / 2)
+          break
+        case 'frontend':
+          // hina.setRotationFromAxisAngle(0)
+          break
+      }
+    }
 
     await mixMouth(obj)
 
@@ -167,7 +256,7 @@ export function useThree(dom) {
     const target = obj.position.clone()
     camera.position.set(target.x, target.y, -(target.z + 0.03))
 
-    camera.lookAt(target)
+    camera.lookAt(hina)
     animate();
   })
   onUnmounted(() => {
@@ -180,7 +269,7 @@ function loadGltf(url) {
     const loader = new GLTFLoader()
     loader.load(url, async (gltf) => {
       mixer = new THREE.AnimationMixer(gltf.scene)
-      mixer.clipAction(gltf.animations[Hina.EXS_CUTIN]).play()
+      mixer.clipAction(gltf.animations[Hina.MOVE_ING]).play()
 
       gltf.scene.traverse( function ( object ) {
         if ( object.isMesh ) {
