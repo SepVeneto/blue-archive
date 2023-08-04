@@ -6,6 +6,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { Hina } from './constant';
 import GUI from 'lil-gui'
+import { Hina as ChHina } from './characters'
+import { ResourceManager } from './resources';
+
 const gui = new GUI()
 
 let isAnimatePlay = false
@@ -22,6 +25,7 @@ const settings = {
   'modify callsign weight': 0,
   'modify moveing weight': 0,
   'modify endstand weight': 1,
+  'metalness': 1,
 }
 const mouths = [
   new THREE.Vector2(0, 0),
@@ -158,19 +162,46 @@ function playCafeIdle() {
 
 
 
+const resourceManager = new ResourceManager()
 export function useThree(dom) {
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 20);
+  const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 200);
+
+  const ambientLight = new THREE.AmbientLight(0xFFFFFF)
+  scene.add(ambientLight)
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize( window.innerWidth, window.innerHeight );
-
   const floor = createFloor()
   scene.add(floor)
+  scene.add(new THREE.AxesHelper(1))
 
-  const hemiLight = new THREE.HemisphereLight( 0xFFFFFF, 0x8d8d8d, 3);
-	hemiLight.position.set( 0, 20,0 );
-	scene.add( hemiLight );
+  const pointLight = new THREE.PointLight( 0xFFFFFF, 0.01);
+  const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.01)
+	scene.add( pointLight);
+  scene.add(pointLightHelper)
+
+  const objs = []
+
+  resourceManager.$on('finish', () => {
+    const hina = new ChHina()
+    objs.push(hina)
+    scene.add(hina.object)
+
+    hina.play(Hina.CAFE_WALK)
+    const skeletonHelper = new THREE.SkeletonHelper(hina.object)
+    scene.add(skeletonHelper)
+
+    const hina2 = new ChHina()
+    objs.push(hina2)
+    scene.add(hina2.object)
+    hina2.object.position.x += 1
+    hina2.play(Hina.MOVE_ING)
+
+    const target = hina.object.position.clone()
+    camera.position.set(target.x, target.y, -(target.z + 3))
+    camera.lookAt(hina)
+  })
 
 
   const clock = new THREE.Clock()
@@ -179,25 +210,33 @@ export function useThree(dom) {
   function animate() {
 	  requestAnimationFrame( animate );
     const delta = clock.getDelta()
-    if (mixer) mixer.update(delta)
+    const time = -performance.now() * 0.0003
+
+    objs.forEach(inst => inst.tick(delta))
     // uniforms.mouth_offset.value = mouths[Math.floor(i / 6 % 16)]
     // ++i
     // if (i === 160) i = 0
 
-    callsign && (settings['modify callsign weight'] = callsign.getEffectiveWeight())
-    moveing && (settings['modify moveing weight'] = moveing.getEffectiveWeight())
-    endstand && (settings['modify endstand weight'] = endstand.getEffectiveWeight())
+    // callsign && (settings['modify callsign weight'] = callsign.getEffectiveWeight())
+    // moveing && (settings['modify moveing weight'] = moveing.getEffectiveWeight())
+    // endstand && (settings['modify endstand weight'] = endstand.getEffectiveWeight())
 
-    if (forward) {
-      hina.position.z -= 0.001
-      camera.position.z -= 0.001
-      controls.target.z -= 0.001
-    }
-    if (left) {
-      hina.position.x -= 0.001
-      camera.position.x -= 0.001
-      controls.target.x -= 0.001
-    }
+    // pointLight.position.set(
+    //   Math.sin(time* 1.7),
+    //   Math.cos(time* 1.5),
+    //   Math.cos(time* 1.3),
+    // )
+
+    // if (forward) {
+    //   pointLight.position.z -= 0.001
+    //   camera.position.z -= 0.001
+    //   controls.target.z -= 0.001
+    // }
+    // if (left) {
+    //   pointLight.position.x -= 0.001
+    //   camera.position.x -= 0.001
+    //   controls.target.x -= 0.001
+    // }
 
 	  renderer.render( scene, camera );
   }
@@ -208,55 +247,52 @@ export function useThree(dom) {
   let dir = 'frontend'
 
   onMounted(async () => {
-    document.addEventListener('keydown', (evt) => {
-      if (evt.key.toLowerCase() === 'w') {
-        forward = true
-        dir = 'frontend'
-      }
-      if (evt.key.toLowerCase() === 'a') {
-        left = true
-        hina.setRotationFromEuler(Math.PI / 2)
-        dir = 'left'
-      }
-    })
-    document.addEventListener('keyup', (evt) => {
-      if (evt.key.toLowerCase() === 'w') {
-        forward = false
-      }
-      if (evt.key.toLowerCase() === 'a') {
-        left = false
-      }
-    })
+    // document.addEventListener('keydown', (evt) => {
+    //   if (evt.key.toLowerCase() === 'w') {
+    //     forward = true
+    //     dir = 'frontend'
+    //   }
+    //   if (evt.key.toLowerCase() === 'a') {
+    //     left = true
+    //     hina.setRotationFromEuler(Math.PI / 2)
+    //     dir = 'left'
+    //   }
+    // })
+    // document.addEventListener('keyup', (evt) => {
+    //   if (evt.key.toLowerCase() === 'w') {
+    //     forward = false
+    //   }
+    //   if (evt.key.toLowerCase() === 'a') {
+    //     left = false
+    //   }
+    // })
     dom.value.appendChild( renderer.domElement );
     controls = new OrbitControls(camera, renderer.domElement)
 
-    const gltf = await loadGltf('/Hina_Original/Hina_Original.gltf')
-    animations = gltf.animations
-    const obj = gltf.scene
-    hina = obj
+    // const gltf = await loadGltf('/Hina_Original/Hina_Original.gltf')
+    // animations = gltf.animations
+    // const obj = gltf.scene
+    // hina = obj
+    // const size = getGroupSize(hina)
+    // pointLight.position.set(size.x, size.y, size.z)
 
-    if (hina) {
-      switch(dir) {
-        case 'left':
-          console.log(hina.rotation)
-          hina.setRotationFromAxisAngle(Math.PI / 2)
-          break
-        case 'frontend':
-          // hina.setRotationFromAxisAngle(0)
-          break
-      }
-    }
+    // if (hina) {
+    //   switch(dir) {
+    //     case 'left':
+    //       console.log(hina.rotation)
+    //       hina.setRotationFromAxisAngle(Math.PI / 2)
+    //       break
+    //     case 'frontend':
+    //       // hina.setRotationFromAxisAngle(0)
+    //       break
+    //   }
+    // }
 
-    await mixMouth(obj)
-
-    scene.add(new THREE.AxesHelper(1))
+    // await mixMouth(obj)
 
 
-    scene.add(obj)
-    const target = obj.position.clone()
-    camera.position.set(target.x, target.y, -(target.z + 0.03))
 
-    camera.lookAt(hina)
+    // scene.add(obj)
     animate();
   })
   onUnmounted(() => {
@@ -273,6 +309,31 @@ function loadGltf(url) {
 
       gltf.scene.traverse( function ( object ) {
         if ( object.isMesh ) {
+          // if (object.material.name === 'Hina_Original_Face') {
+          //   loadTexture('/Hina_Original/Hina_Original_Face_Mask.png').then(tex => {
+          //     tex.repeat.y = -1
+          //     object.material.normalMap = tex
+          //   })
+          // }
+          // if (object.material.name === 'Hina_Original_Body') {
+          //   loadTexture('/Hina_Original/Hina_Original_Body_Mask.png').then(tex => {
+          //     // tex.repeat.y = -1
+          //     object.material.normalMap = tex
+          //   })
+          // }
+          if (object.material.name === 'Hina_Original_Hair') {
+            console.log('hair', object.material)
+            // loadTexture('/Hina_Original/Hina_Original_Hair_Mask.png').then(tex => {
+            //   // tex.repeat.y = -1
+            //   object.material.normalMap = tex
+            // })
+          }
+          // if (object.material.name === 'Hina_Original_Weapon') {
+          //   loadTexture('/Hina_Original/Hina_Original_Weapon_Mask.png').then(tex => {
+          //     object.material.normalMap = tex
+          //   })
+          // }
+          // console.log(object)
           object.castShadow = true;
           object.material.vertexColors = false
         }
@@ -290,18 +351,6 @@ function loadGltf(url) {
       resolve(gltf)
     })
   })
-}
-
-async function mixMouth(object) {
-  const obj = object.getObjectByName('Hina_Original_Body_3')
-  const mouthTex = await loadTexture('/Hina_Original/Hina_Mouth.png')
-  mouthTex.colorSpace = THREE.SRGBColorSpace
-
-  obj.material.transparent = true
-  createFace(obj.material, uniforms)
-  m = obj.material
-  uniforms.mouth_texture.value = mouthTex
-  obj.material.needsUpdate = true
 }
 
 function loadTexture(url) {
