@@ -16,7 +16,7 @@ const RESOURCE_MAP = [
   {
     name: 'HinaHairMask',
     type: 'normal',
-    src: '/Hina_Original/Hina_Original_Face_Mask.png',
+    src: '/Hina_Original/Hina_Original_Hair_Mask.png',
   },
   {
     name: 'HinaWeaponMask',
@@ -32,7 +32,13 @@ const RESOURCE_MAP = [
     name: 'HinaFaceMask',
     type: 'normal',
     src: '/Hina_Original/Hina_Original_Face_Mask.png',
-  }
+  },
+  {
+    name: 'HinaHairSpec',
+    type: 'spec',
+    // src: '/Hina_Original/Hina_Original_Hair_Spec.png',
+    src: '/Hina_Original/背景.png'
+  },
 ]
 
 export class ResourceManager extends EventEmit {
@@ -53,6 +59,7 @@ export class ResourceManager extends EventEmit {
           break
         case 'texture':
         case 'alpha':
+        case 'spec':
         case 'normal':
           this.loadTexture(config.src).then(tex => {
             ResourceManager.resource[config.name] = tex
@@ -79,8 +86,17 @@ export class ResourceManager extends EventEmit {
 
         gltf.scene.traverse( function ( object ) {
           if ( object.isMesh ) {
+            console.log(object)
             object.castShadow = true;
             object.material.vertexColors = false
+            const origin = object.material
+            object.material = new THREE.MeshToonMaterial({
+              name: object.name,
+              map: origin.map
+            })
+            // if (object.name === 'Hina_Original_Body_5') {
+            //   object.material.spec
+            // }
           }
         })
         gltf.scene.scale.set(100, 100, 100)

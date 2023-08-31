@@ -169,6 +169,10 @@ export function useThree(dom) {
 
   const ambientLight = new THREE.AmbientLight(0xFFFFFF)
   scene.add(ambientLight)
+  const directionLight = new THREE.DirectionalLight(0xFFFFFF, 2)
+  directionLight.position.set(0, 0, -1)
+  scene.add(directionLight)
+  scene.add(new THREE.DirectionalLightHelper(directionLight, 1))
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize( window.innerWidth, window.innerHeight );
@@ -188,15 +192,17 @@ export function useThree(dom) {
     objs.push(hina)
     scene.add(hina.object)
 
-    hina.play(Hina.CAFE_WALK)
-    const skeletonHelper = new THREE.SkeletonHelper(hina.object)
-    scene.add(skeletonHelper)
+    hina.play(Hina.FORMATION_IDLE)
+    // const skeletonHelper = new THREE.SkeletonHelper(hina.object)
+    // scene.add(skeletonHelper)
+    // hina.setHairSpec()
 
     const hina2 = new ChHina()
     objs.push(hina2)
     scene.add(hina2.object)
     hina2.object.position.x += 1
-    hina2.play(Hina.MOVE_ING)
+    hina2.play(Hina.FORMATION_IDLE)
+    // hina2.setHairSpec()
 
     const target = hina.object.position.clone()
     camera.position.set(target.x, target.y, -(target.z + 3))
