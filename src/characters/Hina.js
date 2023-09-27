@@ -7,7 +7,7 @@ export class Hina extends Character {
   constructor() {
     super()
 
-    this.source = ResourceManager.get('Hina')
+    this.source = ResourceManager.get('Hina-re')
     this.object = clone(this.source.scene)
     this.size = this.getGroupSize()
     console.log(this.object)
@@ -17,10 +17,16 @@ export class Hina extends Character {
 
     this.mixMouth()
 
-    const box = new THREE.Box3()
-    box.setFromCenterAndSize(this.object.position, this.size)
-    const boxHelper = new THREE.Box3Helper(box, 0xff0000)
-    this.object.add(boxHelper)
+    this.object.traverse(child => {
+      if (child.isMesh) {
+        child.geometry.computeBoundingBox()
+        const box = child.geometry.boundingBox
+        // box.setFromCenterAndSize(this.object.position, this.size)
+        const boxHelper = new THREE.Box3Helper(box, 0xff0000)
+        // boxHelper.updateMatrix = true
+        this.object.add(boxHelper)
+      }
+    })
   }
   setHairSpec() {
     const obj = this.object.getObjectByName('Hina_Original_Body_5')
@@ -41,12 +47,44 @@ export class Hina extends Character {
     // obj.needsUpdate = true
   }
 
+
+  executeCrossFade(action) {
+    setWeight(action, 1)
+
+    action.time = 0
+    this.startAction.crossFadeTo(action, 1)
+  }
+
   play(index) {
-    console.log(this.animations[index])
+    // this.animations[index].tracks.forEach(track => {
+    //   // if (track.name === 'Bip001_L_Calf.quaternion') {
+    //   const step = track.values.length / track.times.length
+    //   const firstTime = track.times[0]
+    //   const res = [].concat(...track.values)
+    //   const firstValue = res.slice(0, step)
+    //   res.push(...firstValue)
+    //   track.values = new Float32Array(res)
+    // })
+    // debugger
     const action = this.mixer.clipAction(this.animations[index])
-    action.timeScale = 0.1
-    // action.loop = THREE.LoopOnce
+    // action.clampWhenFinished = true
+    // action.timeScale = 0.1
+    // setTimeout(() => {
+    //   action.loop = THREE.LoopOnce
+    // }, 1000)
     // action.clampWhenFinished = true
     action.play()
+    if (this.startAction) {
+      this.startAction && setWeight(action, 0)
+      this.executeCrossFade(action)
+    }
+    this.startAction = action
   }
+}
+
+
+function setWeight(action, weight) {
+  action.enabled = true
+  action.setEffectiveTimeScale(1)
+  action.setEffectiveWeight(weight)
 }
