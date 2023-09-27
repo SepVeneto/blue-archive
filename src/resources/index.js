@@ -73,7 +73,7 @@ export class ResourceManager extends EventEmit {
             // }
           }
         })
-        gltf.scene.scale.set(100, 100, 100)
+        // gltf.scene.scale.set(100, 100, 100)
         resolve(gltf)
       })
     })

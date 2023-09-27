@@ -164,7 +164,9 @@ function playCafeIdle() {
 const resourceManager = new ResourceManager()
 export function useThree(dom) {
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 10, 2000);
+  const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 200 * 100);
+  camera.zoom = 0.5
+  // camera.updateProjectionMatrix()
 
   const ambientLight = new THREE.AmbientLight(0xFFFFFF)
   scene.add(ambientLight)
@@ -209,7 +211,6 @@ export function useThree(dom) {
     hina = new ChHina()
     objs.push(hina)
     scene.add(hina.object)
-    hina.play(Hina.CAFE_IDLE)
 
     // hina.play(Hina.FORMATION_IDLE)
     // const skeletonHelper = new THREE.SkeletonHelper(hina.object)
@@ -224,8 +225,9 @@ export function useThree(dom) {
     // hina2.setHairSpec()
 
     const target = hina.object.position.clone()
-    camera.position.set(target.x, target.y, (target.z + 200))
+    camera.position.set(target.x, target.y + 1, (target.z + 2))
     camera.lookAt(hina)
+    // camera.updateProjectionMatrix()
 
     // outlinePass.selectedObjects = [hina.object, hina2.object]
   })
@@ -273,25 +275,36 @@ export function useThree(dom) {
   let dir = 'frontend'
 
   onMounted(async () => {
-    // document.addEventListener('keydown', (evt) => {
-    //   if (evt.key.toLowerCase() === 'w') {
-    //     forward = true
-    //     dir = 'frontend'
-    //   }
-    //   if (evt.key.toLowerCase() === 'a') {
-    //     left = true
-    //     hina.setRotationFromEuler(Math.PI / 2)
-    //     dir = 'left'
-    //   }
-    // })
-    // document.addEventListener('keyup', (evt) => {
-    //   if (evt.key.toLowerCase() === 'w') {
-    //     forward = false
-    //   }
-    //   if (evt.key.toLowerCase() === 'a') {
-    //     left = false
-    //   }
-    // })
+    document.addEventListener('keydown', (evt) => {
+      switch (evt.key.toLowerCase()) {
+        case 'w':
+          hina.turn('front')
+          hina.moveStart()
+          break
+        case 'a':
+          hina.turn('left')
+          hina.moveStart()
+          break
+        case 's':
+          hina.turn('back')
+          hina.moveStart()
+          break
+        case 'd':
+          hina.turn('right')
+          hina.moveStart()
+          break
+      }
+    })
+    document.addEventListener('keyup', (evt) => {
+      switch (evt.key.toLowerCase()) {
+        case 'w':
+        case 'a':
+        case 's':
+        case 'd':
+        hina.moveEnd()
+        break
+      }
+    })
     dom.value.appendChild( renderer.domElement );
     controls = new OrbitControls(camera, renderer.domElement)
 

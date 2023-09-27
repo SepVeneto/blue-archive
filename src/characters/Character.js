@@ -45,6 +45,7 @@ export class Character {
     if (!this.mixer) return
 
     this.mixer.update(delta)
+    this.update?.()
   }
   // 获取Group的尺寸
   getGroupSize() {
@@ -63,6 +64,6 @@ export class Character {
     const size = new THREE.Vector3();
     bbox.getSize(size);
 
-    return size;
+    return bbox;
   }
 }

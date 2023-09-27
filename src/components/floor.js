@@ -67,5 +67,11 @@ void main()
   // mesh.matrixAutoUpdate = false
   // mesh.updateMatrix()
 
-  return mesh
+  const gridHelper = new THREE.GridHelper(10 * 10, 100)
+
+  const group = new THREE.Group()
+  group.add(gridHelper)
+
+  group.add(mesh)
+  return group
 }
