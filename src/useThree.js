@@ -8,6 +8,12 @@ import { Hina } from './constant';
 import GUI from 'lil-gui'
 import { Hina as ChHina } from './characters'
 import { ResourceManager } from './resources';
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass'
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 
 const gui = new GUI()
 
@@ -18,6 +24,7 @@ let animations = []
 const settings = {
   'show skeleton': false,
   'cafe idle': playCafeIdle,
+  'cafe walk': () => hina.play(Hina.CAFE_WALK),
   'cafe reaction': playCafeReaction,
   'ex': playEx,
   'move': playMove,
@@ -45,12 +52,12 @@ const mouths = [
   new THREE.Vector2(0.5, 0.75),
   new THREE.Vector2(0.75, 0.75),
 ]
-let m
 const uniforms = {
   mouth_texture: { value: null },
   mouth_offset: { value: new THREE.Vector2(0.75, 0.25) },
 }
 gui.add(settings, 'cafe idle')
+gui.add(settings, 'cafe walk')
 gui.add(settings, 'cafe reaction')
 gui.add(settings, 'ex')
 gui.add(settings, 'move')
@@ -69,6 +76,7 @@ gui.add(settings, 'mouth', mouths.reduce((obj, curr, i) => {
 let callsign
 let moveing
 let endstand
+let hina
 
 function playMove() {
   if (isAnimatePlay) {
@@ -138,34 +146,25 @@ function playEx() {
   }
 }
 function playCafeReaction() {
-  if (isAnimatePlay) {
-    mixer.stopAllAction()
-    isAnimatePlay = false
-    playCafeReaction()
-  } else {
-    const action = mixer.clipAction(animations[Hina.CAFE_REACTION])
-    action.play()
-    isAnimatePlay = true
-  }
+  hina.play(Hina.CAFE_REACTION)
 }
 function playCafeIdle() {
-  if (isAnimatePlay) {
-    mixer.stopAllAction()
-    isAnimatePlay = false
-    playCafeIdle()
-  } else {
-    const action = mixer.clipAction(animations[Hina.CAFE_IDLE])
-    action.play()
-    isAnimatePlay = true
-  }
+  hina.play(Hina.CAFE_IDLE)
+  // if (isAnimatePlay) {
+  //   mixer.stopAllAction()
+  //   isAnimatePlay = false
+  //   playCafeIdle()
+  // } else {
+  //   const action = mixer.clipAction(animations[Hina.CAFE_IDLE])
+  //   action.play()
+  //   isAnimatePlay = true
+  // }
 }
-
-
 
 const resourceManager = new ResourceManager()
 export function useThree(dom) {
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 200);
+  const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 10, 2000);
 
   const ambientLight = new THREE.AmbientLight(0xFFFFFF)
   scene.add(ambientLight)
@@ -176,9 +175,10 @@ export function useThree(dom) {
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.shadowMap.enabled = true
   const floor = createFloor()
   scene.add(floor)
-  scene.add(new THREE.AxesHelper(1))
+  scene.add(new THREE.AxesHelper(140))
 
   const pointLight = new THREE.PointLight( 0xFFFFFF, 0.01);
   const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.01)
@@ -187,28 +187,48 @@ export function useThree(dom) {
 
   const objs = []
 
+  // const composer = new EffectComposer(renderer)
+  // composer.addPass(new RenderPass(scene, camera))
+
+  // const outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera)
+  // outlinePass.visibleEdgeColor = 0x000000
+  // outlinePass.edgeStrength = 0.0001
+  // outlinePass.edgeGlow = 0
+  // outlinePass.edgeThickness = 1
+  // outlinePass.pulsePeriod = 0
+  // composer.addPass(outlinePass)
+
+  // const outputPass = new OutputPass()
+  // composer.addPass(outputPass)
+
+  // const effectFXAA = new ShaderPass(FXAAShader)
+  // effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight)
+  // composer.addPass(effectFXAA)
+
   resourceManager.$on('finish', () => {
-    const hina = new ChHina()
+    hina = new ChHina()
     objs.push(hina)
     scene.add(hina.object)
+    hina.play(Hina.CAFE_IDLE)
 
-    hina.play(Hina.FORMATION_IDLE)
+    // hina.play(Hina.FORMATION_IDLE)
     // const skeletonHelper = new THREE.SkeletonHelper(hina.object)
     // scene.add(skeletonHelper)
     // hina.setHairSpec()
 
-    const hina2 = new ChHina()
-    objs.push(hina2)
-    scene.add(hina2.object)
-    hina2.object.position.x += 1
-    hina2.play(Hina.FORMATION_IDLE)
+    // const hina2 = new ChHina()
+    // objs.push(hina2)
+    // scene.add(hina2.object)
+    // hina2.object.position.x += 10
+    // hina2.play(Hina.MOVE_ING)
     // hina2.setHairSpec()
 
     const target = hina.object.position.clone()
-    camera.position.set(target.x, target.y, -(target.z + 3))
+    camera.position.set(target.x, target.y, (target.z + 200))
     camera.lookAt(hina)
-  })
 
+    // outlinePass.selectedObjects = [hina.object, hina2.object]
+  })
 
   const clock = new THREE.Clock()
 
@@ -245,10 +265,10 @@ export function useThree(dom) {
     // }
 
 	  renderer.render( scene, camera );
+    // composer.render()
   }
   let forward = false
   let left = false
-  let hina
   let controls
   let dir = 'frontend'
 
@@ -302,7 +322,7 @@ export function useThree(dom) {
     animate();
   })
   onUnmounted(() => {
-    dom.value.removeChild(renderer.domElement)
+    dom.value?.removeChild(renderer.domElement)
   })
 }
 
