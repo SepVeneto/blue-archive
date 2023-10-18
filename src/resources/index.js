@@ -12,6 +12,11 @@ const RESOURCE_MAP = [
     name: 'Hina-re',
     type: 'gltf',
     src: '/hina.glb'
+  },
+  {
+    name: 'fire',
+    type: 'texture',
+    src: '/FX_TEX_Shock_Wave_19.png',
   }
 ]
 

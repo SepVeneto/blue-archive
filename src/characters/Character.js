@@ -27,6 +27,12 @@ export class Character {
   }
   mixer = undefined
   object = undefined
+  delta = 0
+  world = undefined
+
+  constructor(world) {
+    this.world = world
+  }
 
   setMouth(index) {
     this.uniforms.mouth_offset = MOUTHS[index]
@@ -44,6 +50,7 @@ export class Character {
   tick(delta) {
     if (!this.mixer) return
 
+    this.delta = delta
     this.mixer.update(delta)
     this.update?.()
   }
