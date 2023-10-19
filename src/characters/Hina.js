@@ -39,9 +39,20 @@ export class Hina extends Character {
     this.mixer = new THREE.AnimationMixer(this.object)
     this.children = []
 
-    this.fireEffect = new THREE.Sprite(genFireMaterial({
-      map: ResourceManager.get('fire')
+    const fireTex = ResourceManager.get('fire')
+    // fireTex.wrapS = fireTex.wrapT = THREE.RepeatWrapping
+    const fireGeo = new THREE.PlaneGeometry(1, 1)
+    fireGeo.translate(0.5, 0, 0)
+    this.fireOffset = new THREE.Vector2(0, 0)
+    this.fireEffect = new THREE.Mesh(fireGeo, new genFireMaterial({
+      map: fireTex,
+      offset: this.fireOffset,
+      repeat: new THREE.Vector2(0.5, 0.5),
     }))
+    this.fireEffect.scale.set(0.5, 0.5, 0.5)
+    this.fireEffect.rotateY(Math.PI / 2)
+    this.fireUpdate = this.textureAnimation(2, 2, 4, 0.01)
+
     this.world.add(this.fireEffect)
 
     this.mixMouth()
@@ -94,9 +105,11 @@ export class Hina extends Character {
   attack() {
     this.play(Action.NORMAL_ATTACK_ING, 0.3)
     this.state = 'attacking'
+    this.object.add(this.fireEffect)
   }
   stop() {
     this.moveEnd()
+    this.object.remove(this.fireEffect)
   }
   update() {
     if (this.state === 'moving') {
@@ -127,6 +140,8 @@ export class Hina extends Character {
         const firePos = new THREE.Vector3()
         this.fire.getWorldPosition(firePos)
         const bullet = new Bullet(this.world, firePos)
+        this.fireEffect.position.copy(firePos)
+        this.fireUpdate(this.delta)
         this.world.add(bullet)
 
         this.attackProcess = 0
@@ -155,6 +170,27 @@ export class Hina extends Character {
       }
       this.startAction = action
     })
+  }
+
+  textureAnimation(tilesHoriz, tilesVert, numTiles, duration) {
+    let currentTime = 0
+    let currentTile = 0
+
+    return (delta) => {
+      currentTime += delta
+      while (currentTime > duration) {
+        currentTime = 0
+        ++currentTile
+
+        if (currentTile === numTiles) currentTile = 0
+
+        const currentColumn = currentTile % tilesHoriz
+        this.fireOffset.x = currentColumn / tilesHoriz
+        const currentRow = Math.floor(currentTile / tilesHoriz)
+        this.fireOffset.y = currentRow / tilesVert
+        console.log(this.fireOffset)
+      }
+    }
   }
 }
 
