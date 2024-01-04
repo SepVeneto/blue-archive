@@ -53,7 +53,7 @@ export class Hina extends Character {
     this.fireEffect.rotateY(Math.PI / 2)
     this.fireUpdate = this.textureAnimation(2, 2, 4, 0.01)
 
-    this.world.add(this.fireEffect)
+    // this.world.add(this.fireEffect)
 
     this.mixMouth()
 
@@ -103,9 +103,10 @@ export class Hina extends Character {
     this.play(Action.NORMAL_IDLE, 0.3)
   }
   attack() {
-    this.play(Action.NORMAL_ATTACK_ING, 0.3)
-    this.state = 'attacking'
-    this.object.add(this.fireEffect)
+    this.play(Action.NORMAL_ATTACK_ING, 0.3).then(() => {
+      this.object.add(this.fireEffect)
+      this.state = 'attacking'
+    })
   }
   stop() {
     this.moveEnd()
