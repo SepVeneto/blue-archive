@@ -1,7 +1,13 @@
 import * as THREE from 'three'
 // import { spritesheetUV } from 'three/examples/jsm/nodes/Nodes'
 
-export default function genFireMaterial(options = { map: null }) {
+export type FireOptions = {
+  map?: any
+  offset?: THREE.Vector2
+  repeat?: THREE.Vector2
+}
+
+export default function genFireMaterial(options: FireOptions = { map: null }) {
   const vertex = `
 varying vec2 vUv;
 

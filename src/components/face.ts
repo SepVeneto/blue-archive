@@ -16,10 +16,12 @@ if (alpha == 0.0) {
 }
 `
 
-export function createFace(material, uniforms = {} ) {
-  THREE.ShaderChunk['face_mix_pars_fragment'] = fragmentParmas
-  THREE.ShaderChunk['face_mix_fragment_start'] = fragmentStart
-  THREE.ShaderChunk['face_mix_fragment_end'] = fragmentEnd
+export function createFace(material: THREE.Material, uniforms = {} ) {
+  Object.assign(THREE.ShaderChunk, {
+    face_mix_pars_fragment: fragmentParmas,
+    face_mix_fragment_start: fragmentStart,
+    face_mix_fragment_end: fragmentEnd,
+  })
 
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms)

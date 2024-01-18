@@ -1,11 +1,8 @@
-import { onMounted, onUnmounted } from 'vue';
+import { Ref, onMounted, onUnmounted } from 'vue';
 import * as THREE from 'three';
 import createFloor from './components/floor'
-import { createFace } from './components/face';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { Hina } from './constant';
-import { Hina as ChHina } from './characters'
+import { Hina as ChHina, Hina } from './characters'
 import { ResourceManager } from './resources';
 import { World } from './world/Event';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass'
@@ -14,7 +11,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
-import './utils/gui'
+// import './utils/gui'
 
 let isAnimatePlay = false
 let mixer
@@ -75,11 +72,11 @@ const uniforms = {
 let callsign
 let moveing
 let endstand
-let hina
-let world
+let hina: Hina
+let world: World
 
 const resourceManager = new ResourceManager()
-export function useThree(dom) {
+export function useThree(dom: Ref<HTMLElement>) {
   const scene = new THREE.Scene();
   world = new World(scene)
   const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 200 * 100);
@@ -109,6 +106,7 @@ export function useThree(dom) {
 
   resourceManager.$on('finish', () => {
     hina = new ChHina(world)
+    hina.add(camera)
     world.add(hina)
 
     // const geometry = new THREE.CapsuleGeometry(1, 1, 1, 8)
@@ -117,7 +115,7 @@ export function useThree(dom) {
 
     const target = hina.object.position.clone()
     camera.position.set(target.x, target.y + 1, (target.z + 2))
-    camera.lookAt(hina)
+    // camera.lookAt(hina)
 
   })
 
@@ -165,17 +163,17 @@ export function useThree(dom) {
         break
       }
     })
-    document.addEventListener('mousedown', () => {
-      hina?.attack()
+    document.addEventListener('mousedown', (evt) => {
+      evt.button === 0 && hina?.attack()
     })
-    document.addEventListener('mouseup', () => {
-      hina?.stop()
+    document.addEventListener('mouseup', (evt) => {
+      evt.button === 0 && hina?.stop()
     })
     dom.value.appendChild( renderer.domElement );
     controls = new OrbitControls(camera, renderer.domElement)
     controls.mouseButtons = {
-      LEFT: null,
-      MIDDLE: null,
+      LEFT: undefined,
+      MIDDLE: undefined,
       RIGHT: THREE.MOUSE.ROTATE
     }
 
@@ -183,39 +181,5 @@ export function useThree(dom) {
   })
   onUnmounted(() => {
     dom.value?.removeChild(renderer.domElement)
-  })
-}
-
-function loadGltf(url) {
-  return new Promise(resolve => {
-    const loader = new GLTFLoader()
-    loader.load(url, async (gltf) => {
-      mixer = new THREE.AnimationMixer(gltf.scene)
-      mixer.clipAction(gltf.animations[Hina.MOVE_ING]).play()
-
-      gltf.scene.traverse( function ( object ) {
-        if ( object.isMesh ) {
-
-          if (object.material.name === 'Hina_Original_Hair') {
-            console.log('hair', object.material)
-
-          }
-
-          object.castShadow = true;
-          object.material.vertexColors = false
-        }
-      })
-
-
-      resolve(gltf)
-    })
-  })
-}
-
-function loadTexture(url) {
-  return new Promise(resolve => {
-    const loader = new THREE.TextureLoader().load(url, (tex) => {
-      resolve(tex)
-    })
   })
 }

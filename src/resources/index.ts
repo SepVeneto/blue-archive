@@ -21,7 +21,9 @@ const RESOURCE_MAP = [
 ]
 
 export class ResourceManager extends EventEmit {
-  static resource = {}
+  static resource: Record<string, any> = {}
+  public total = 0
+  public current = 0
   constructor() {
     super()
 
@@ -48,7 +50,7 @@ export class ResourceManager extends EventEmit {
     })
   }
 
-  static get(name) {
+  static get(name: string) {
     return ResourceManager.resource[name]
   }
 
@@ -58,12 +60,12 @@ export class ResourceManager extends EventEmit {
       this.$emit('finish')
     }
   }
-  loadGltf(url) {
+  loadGltf(url: string) {
     return new Promise(resolve => {
       const loader = new GLTFLoader()
       loader.load(url, async (gltf) => {
 
-        gltf.scene.traverse( function ( object ) {
+        gltf.scene.traverse( function ( object: any ) {
           if ( object.isMesh ) {
             object.castShadow = true;
             object.receiveShadow = true
@@ -83,7 +85,7 @@ export class ResourceManager extends EventEmit {
       })
     })
   }
-  loadTexture(url) {
+  loadTexture(url: string) {
     return new Promise(resolve => {
       const loader = new THREE.TextureLoader()
       loader.load(url, (tex) => {

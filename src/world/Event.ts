@@ -1,19 +1,23 @@
-export class World {
+import { Debug } from './Debug'
+export class World extends Debug {
   static scene = null
   static children = null
-  constructor(scene) {
+  public scene: THREE.Scene
+  public children: any[]
+  constructor(scene: THREE.Scene) {
+    super()
     this.scene = scene
     this.children = []
     console.log(this.scene, this.children)
   }
-  add(obj) {
+  add(obj: any) {
     this.scene.add(obj.object ? obj.object : obj)
     this.children.push(obj)
   }
-  remove(obj) {
+  remove(obj: any) {
     this.scene.remove(obj.object ? obj.object : obj)
   }
-  tick(delta) {
+  tick(delta: number) {
     this.children.forEach((obj, index) => {
       const res = obj.tick && obj.tick(delta)
       if (res === false) {

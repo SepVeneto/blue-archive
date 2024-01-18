@@ -38,13 +38,13 @@ void main()
     fragmentShader: fragment,
   })
 
-  const topLeft = {}
+  const topLeft: THREE.RGB = { r: 0, g: 0, b: 0 }
   new THREE.Color('#f5883c').getRGB(topLeft, THREE.SRGBColorSpace)
-  const topRight = {}
+  const topRight: THREE.RGB = { r: 0, g: 0, b: 0 }
   new THREE.Color('#ff9043').getRGB(topRight, THREE.SRGBColorSpace)
-  const bottomRight = {}
+  const bottomRight: THREE.RGB = { r: 0, g: 0, b: 0 }
   new THREE.Color('#fccf92').getRGB(bottomRight, THREE.SRGBColorSpace)
-  const bottomLeft = {}
+  const bottomLeft: THREE.RGB = { r: 0, g: 0, b: 0 }
   new THREE.Color('rgb(245,170,88)').getRGB(bottomLeft, THREE.SRGBColorSpace)
   console.log(bottomLeft)
   const data = new Uint8Array([

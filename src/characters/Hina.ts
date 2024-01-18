@@ -6,6 +6,7 @@ import { Hina as Action } from '../constant'
 import { Bullet } from './Bullet'
 import { World } from '../world/Event'
 import genFireMaterial from '../components/fire'
+import { gui } from '../world/Debug'
 
 const DIRECT_AXIS = new THREE.Vector3(0, 1, 0)
 const DIRECT = {
@@ -15,14 +16,36 @@ const DIRECT = {
   RIGHT: new THREE.Quaternion().setFromAxisAngle(DIRECT_AXIS, - Math.PI / 2),
 }
 
+function debug(...args: any[]) {
+  console.log(args)
+}
+
 export class Hina extends Character {
-  constructor(world) {
+  @debug
+  state = 'idle'
+  public source
+  public fire
+  public speed
+  public rotateSpeed
+  public attackSpeed
+  public attackProcess
+  public size
+  public forward
+  public animations
+  public children: any[] = []
+  public fireOffset
+  public fireEffect
+  public fireUpdate
+  public startAction: THREE.AnimationAction | undefined
+  constructor(world: World) {
     super(world)
 
-    this.state = 'idle'
     this.source = ResourceManager.get('Hina-re')
     this.object = clone(this.source.scene)
     this.fire = this.object.getObjectByName('fire_01')
+    // const characterFolder = gui.addFolder('Character')
+
+    // characterFolder.add(this, 'state').listen()
     this.speed = 0.1
     this.rotateSpeed = 10
 
@@ -33,7 +56,7 @@ export class Hina extends Character {
     this.forward = 'front'
     // this.object.children[0].setRotationFromEuler(Math.PI / 2)
     this.object.position.set(0, 0, 0)
-    this.object.add(new THREE.Box3Helper(this.size, 0xff0000))
+    this.object.add(new THREE.Box3Helper(this.size, new THREE.Color(0xff0000)))
     // this.size.multiplyVectors(this.size, this.object.scale)
     this.animations = this.source.animations
     this.mixer = new THREE.AnimationMixer(this.object)
@@ -44,7 +67,7 @@ export class Hina extends Character {
     const fireGeo = new THREE.PlaneGeometry(1, 1)
     fireGeo.translate(0.5, 0, 0)
     this.fireOffset = new THREE.Vector2(0, 0)
-    this.fireEffect = new THREE.Mesh(fireGeo, new genFireMaterial({
+    this.fireEffect = new THREE.Mesh(fireGeo, genFireMaterial({
       map: fireTex,
       offset: this.fireOffset,
       repeat: new THREE.Vector2(0.5, 0.5),
@@ -59,7 +82,7 @@ export class Hina extends Character {
 
     this.play(Action.NORMAL_IDLE)
   }
-  add(obj) {
+  add(obj: any) {
     this.object.add(obj)
   }
   setHairSpec() {
@@ -81,11 +104,11 @@ export class Hina extends Character {
   }
 
 
-  executeCrossFade(action, duration) {
+  executeCrossFade(action: any, duration: number) {
     setWeight(action, 1)
 
     action.time = 0
-    this.startAction.crossFadeTo(action, duration)
+    this.startAction?.crossFadeTo?.(action, duration, false)
   }
 
   moveStart() {
@@ -94,7 +117,7 @@ export class Hina extends Character {
     this.state = 'moving'
     this.play(Action.MOVE_ING, 0.3)
   }
-  turn(direct) {
+  turn(direct: string) {
     if (this.forward === direct) return
     this.forward = direct
   }
@@ -115,7 +138,7 @@ export class Hina extends Character {
   update() {
     if (this.state === 'moving') {
       const delta = this.delta
-      const currentSpeed = this.speed * this.startAction.getEffectiveWeight()
+      const currentSpeed = this.speed * this.startAction!.getEffectiveWeight()
       switch (this.forward) {
         case 'front':
           this.object.position.z -= currentSpeed
@@ -156,16 +179,16 @@ export class Hina extends Character {
     })
   }
 
-  play(index, duration = 1) {
+  play(index: number, duration = 1) {
     return new Promise(resolve => {
-      const action = this.mixer.clipAction(this.animations[index])
-      action.play()
+      const action = this.mixer?.clipAction(this.animations[index])
+      action?.play()
       const endFn = () => {
-        this.mixer.removeEventListener('loop', endFn)
+        this.mixer?.removeEventListener('loop', endFn)
         resolve(true)
       }
-      this.mixer.addEventListener("loop", endFn)
-      if (this.startAction) {
+      this.mixer?.addEventListener("loop", endFn)
+      if (this.startAction && action) {
         this.startAction && setWeight(action, 0)
         this.executeCrossFade(action, duration)
       }
@@ -173,11 +196,11 @@ export class Hina extends Character {
     })
   }
 
-  textureAnimation(tilesHoriz, tilesVert, numTiles, duration) {
+  textureAnimation(tilesHoriz: number, tilesVert: number, numTiles: number, duration: number) {
     let currentTime = 0
     let currentTile = 0
 
-    return (delta) => {
+    return (delta: number) => {
       currentTime += delta
       while (currentTime > duration) {
         currentTime = 0
@@ -189,14 +212,13 @@ export class Hina extends Character {
         this.fireOffset.x = currentColumn / tilesHoriz
         const currentRow = Math.floor(currentTile / tilesHoriz)
         this.fireOffset.y = currentRow / tilesVert
-        console.log(this.fireOffset)
       }
     }
   }
 }
 
 
-function setWeight(action, weight) {
+function setWeight(action: THREE.AnimationAction, weight: number) {
   action.enabled = true
   action.setEffectiveTimeScale(1)
   action.setEffectiveWeight(weight)

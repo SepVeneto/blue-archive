@@ -1,6 +1,8 @@
 import { createFace } from '../components/face'
 import * as THREE from 'three'
 import { ResourceManager } from '../resources'
+import { Debug } from '../world/Debug'
+import { World } from '../world/Event'
 
 const MOUTHS = [
   new THREE.Vector2(0, 0),
@@ -20,22 +22,23 @@ const MOUTHS = [
   new THREE.Vector2(0.5, 0.75),
   new THREE.Vector2(0.75, 0.75),
 ]
-export class Character {
+export class Character extends Debug {
   uniforms = {
     mouth_texture: { value: null },
     mouth_offset: { value: new THREE.Vector2(0.75, 0.25) },
   }
-  mixer = undefined
-  object = undefined
-  delta = 0
-  world = undefined
+  public mixer: THREE.AnimationMixer | undefined
+  object: any = undefined
+  public delta: number = 0
+  world: World
 
-  constructor(world) {
+  constructor(world: World) {
+    super()
     this.world = world
   }
 
-  setMouth(index) {
-    this.uniforms.mouth_offset = MOUTHS[index]
+  setMouth(index: number) {
+    this.uniforms.mouth_offset.value = MOUTHS[index]
   }
   mixMouth() {
     const obj = this.object.getObjectByName('Hina_Original_Body_3')
@@ -46,8 +49,8 @@ export class Character {
     this.uniforms.mouth_texture.value = mouthTex
     obj.material.needsUpdate = true
   }
-
-  tick(delta) {
+  update() {}
+  tick(delta: number) {
     if (!this.mixer) return
 
     this.delta = delta
@@ -59,7 +62,7 @@ export class Character {
     const bbox = new THREE.Box3(); // 创建一个边界盒
 
     // 遍历Group的所有子对象，扩展边界盒
-    this.object.children[0].traverse((child) => {
+    this.object.children[0].traverse((child: any) => {
       if (child.geometry) {
         child.geometry.computeBoundingBox();
         bbox.expandByPoint(child.geometry.boundingBox.min);
