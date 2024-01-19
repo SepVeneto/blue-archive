@@ -22,6 +22,7 @@ const MOUTHS = [
   new THREE.Vector2(0.5, 0.75),
   new THREE.Vector2(0.75, 0.75),
 ]
+
 export class Character extends Debug {
   uniforms = {
     mouth_texture: { value: null },

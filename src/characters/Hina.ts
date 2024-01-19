@@ -7,6 +7,7 @@ import { Bullet } from './Bullet'
 import { World } from '../world/Event'
 import genFireMaterial from '../components/fire'
 import { gui } from '../world/Debug'
+import { Animation } from '@/Animation'
 
 const DIRECT_AXIS = new THREE.Vector3(0, 1, 0)
 const DIRECT = {
@@ -16,12 +17,7 @@ const DIRECT = {
   RIGHT: new THREE.Quaternion().setFromAxisAngle(DIRECT_AXIS, - Math.PI / 2),
 }
 
-function debug(...args: any[]) {
-  console.log(args)
-}
-
 export class Hina extends Character {
-  @debug
   state = 'idle'
   public source
   public fire
@@ -37,6 +33,7 @@ export class Hina extends Character {
   public fireEffect
   public fireUpdate
   public startAction: THREE.AnimationAction | undefined
+  public animation: Animation
   constructor(world: World) {
     super(world)
 
@@ -59,8 +56,9 @@ export class Hina extends Character {
     this.object.add(new THREE.Box3Helper(this.size, new THREE.Color(0xff0000)))
     // this.size.multiplyVectors(this.size, this.object.scale)
     this.animations = this.source.animations
-    this.mixer = new THREE.AnimationMixer(this.object)
     this.children = []
+
+    this.animation = new Animation(this.object, this.source.animations)
 
     const fireTex = ResourceManager.get('fire')
     // fireTex.wrapS = fireTex.wrapT = THREE.RepeatWrapping
@@ -80,7 +78,14 @@ export class Hina extends Character {
 
     this.mixMouth()
 
-    this.play(Action.NORMAL_IDLE)
+    // const action = this.mixer?.clipAction(this.animations[Action.NORMAL_IDLE])
+    // const mixer = this.animation.mixer
+    // this.mixer = new THREE.AnimationMixer(this.object)
+    // const mixer = this.mixer
+    this.mixer = this.animation.mixer
+    // this.animation.mixer.clipAction(this.animations[Action.NORMAL_IDLE]).play()
+    this.animation.play(Action.NORMAL_IDLE)
+    // this.play(Action.NORMAL_IDLE)
   }
   add(obj: any) {
     this.object.add(obj)
@@ -115,7 +120,8 @@ export class Hina extends Character {
     if (this.state === 'moving') return
 
     this.state = 'moving'
-    this.play(Action.MOVE_ING, 0.3)
+    this.animation.play(Action.MOVE_ING, 0.3)
+    // this.play(Action.MOVE_ING, 0.3)
   }
   turn(direct: string) {
     if (this.forward === direct) return
@@ -123,13 +129,14 @@ export class Hina extends Character {
   }
   moveEnd() {
     this.state = 'idle'
-    this.play(Action.NORMAL_IDLE, 0.3)
+    this.animation.play(Action.NORMAL_IDLE, 0.3)
+    // this.play(Action.NORMAL_IDLE, 0.3)
   }
-  attack() {
-    this.play(Action.NORMAL_ATTACK_ING, 0.3).then(() => {
-      this.object.add(this.fireEffect)
-      this.state = 'attacking'
-    })
+  async attack() {
+    const isFinish = await this.animation.play(Action.NORMAL_ATTACK_ING, 0.3)
+    if (!isFinish) return
+    this.object.add(this.fireEffect)
+    this.state = 'attacking'
   }
   stop() {
     this.moveEnd()
@@ -138,7 +145,7 @@ export class Hina extends Character {
   update() {
     if (this.state === 'moving') {
       const delta = this.delta
-      const currentSpeed = this.speed * this.startAction!.getEffectiveWeight()
+      const currentSpeed = this.speed * this.animation.getCurrentWeight()
       switch (this.forward) {
         case 'front':
           this.object.position.z -= currentSpeed
@@ -158,13 +165,14 @@ export class Hina extends Character {
           break
       }
     }
+    const firePos = new THREE.Vector3()
+    this.fire.getWorldPosition(firePos)
+    this.fireEffect.position.copy(firePos)
+
     if (this.state === 'attacking') {
       this.attackProcess += this.delta * this.attackSpeed
       if (this.attackProcess >= 1) {
-        const firePos = new THREE.Vector3()
-        this.fire.getWorldPosition(firePos)
         const bullet = new Bullet(this.world, firePos)
-        this.fireEffect.position.copy(firePos)
         this.fireUpdate(this.delta)
         this.world.add(bullet)
 
@@ -179,22 +187,23 @@ export class Hina extends Character {
     })
   }
 
-  play(index: number, duration = 1) {
-    return new Promise(resolve => {
-      const action = this.mixer?.clipAction(this.animations[index])
-      action?.play()
-      const endFn = () => {
-        this.mixer?.removeEventListener('loop', endFn)
-        resolve(true)
-      }
-      this.mixer?.addEventListener("loop", endFn)
-      if (this.startAction && action) {
-        this.startAction && setWeight(action, 0)
-        this.executeCrossFade(action, duration)
-      }
-      this.startAction = action
-    })
-  }
+  // play(index: number, duration = 1) {
+  //   return new Promise(resolve => {
+  //     const action = this.mixer?.clipAction(this.animations[index])
+  //     console.log(this.animations[index])
+  //     // action?.play()
+  //     const endFn = () => {
+  //       this.mixer?.removeEventListener('loop', endFn)
+  //       resolve(true)
+  //     }
+  //     this.mixer?.addEventListener("loop", endFn)
+  //     // if (this.startAction && action) {
+  //     //   this.startAction && setWeight(action, 0)
+  //     //   this.executeCrossFade(action, duration)
+  //     // }
+  //     // this.startAction = action
+  //   })
+  // }
 
   textureAnimation(tilesHoriz: number, tilesVert: number, numTiles: number, duration: number) {
     let currentTime = 0
