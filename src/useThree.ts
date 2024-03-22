@@ -11,6 +11,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+import { Police } from './characters/Police';
 // import './utils/gui'
 
 let isAnimatePlay = false
@@ -105,15 +106,18 @@ export function useThree(dom: Ref<HTMLElement>) {
 
 
   resourceManager.$on('finish', () => {
-    hina = new ChHina(world)
-    hina.add(camera)
-    world.add(hina)
+    // hina = new ChHina(world)
+    const police = new Police(world)
+    // hina.add(camera)
+    // world.add(hina)
+    police.add(camera)
+    world.add(police)
 
     // const geometry = new THREE.CapsuleGeometry(1, 1, 1, 8)
     // scene.add(new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xff0000 })))
 
 
-    const target = hina.object.position.clone()
+    const target = police.object.position.clone()
     camera.position.set(target.x, target.y + 1, (target.z + 2))
     // camera.lookAt(hina)
 
@@ -140,16 +144,16 @@ export function useThree(dom: Ref<HTMLElement>) {
           hina.moveStart()
           break
         case 'a':
-          hina.turn('left')
-          hina.moveStart()
+          // hina.turn('left')
+          // hina.moveStart()
           break
         case 's':
           hina.turn('back')
           hina.moveStart()
           break
         case 'd':
-          hina.turn('right')
-          hina.moveStart()
+          // hina.turn('right')
+          // hina.moveStart()
           break
       }
     })

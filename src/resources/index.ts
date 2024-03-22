@@ -14,6 +14,11 @@ const RESOURCE_MAP = [
     src: '/hina.glb'
   },
   {
+    name: 'Police',
+    type: 'gltf',
+    src: '/character.glb'
+  },
+  {
     name: 'fire',
     type: 'texture',
     src: '/FX_TEX_Shock_Wave_19.png',
@@ -69,17 +74,18 @@ export class ResourceManager extends EventEmit {
           if ( object.isMesh ) {
             object.castShadow = true;
             object.receiveShadow = true
-            object.material.vertexColors = false
-            const origin = object.material
-            object.material = new THREE.MeshToonMaterial({
-              name: object.name,
-              map: origin.map
-            })
+            // object.material.vertexColors = false
+            // const origin = object.material
+            // object.material = new THREE.MeshToonMaterial({
+            //   name: object.name,
+            //   map: origin.map
+            // })
             // if (object.name === 'Hina_Original_Body_5') {
             //   object.material.spec
             // }
           }
         })
+        console.log(gltf)
         // gltf.scene.scale.set(100, 100, 100)
         resolve(gltf)
       })

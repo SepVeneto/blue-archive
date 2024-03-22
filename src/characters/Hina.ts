@@ -9,6 +9,33 @@ import genFireMaterial from '../components/fire'
 import { gui } from '../world/Debug'
 import { Animation } from '@/Animation'
 
+const FIRE_FRAME = [
+  new Float32Array([
+    0, 0,
+    0.5, 0,
+    0.5, 0.5,
+    0, 0.5
+  ]),
+  new Float32Array([
+    0.5, 0,
+    1, 0,
+    1, 0.5,
+    .5, .5,
+  ]),
+  new Float32Array([
+    .5, .5,
+    1, .5,
+    1, 1,
+    .5, 1,
+  ]),
+  new Float32Array([
+    0, .5,
+    .5, .5,
+    .5, 1,
+    0, 1,
+  ])
+]
+
 const DIRECT_AXIS = new THREE.Vector3(0, 1, 0)
 const DIRECT = {
   FRONT: new THREE.Quaternion().setFromAxisAngle(DIRECT_AXIS, 0),
@@ -18,7 +45,7 @@ const DIRECT = {
 }
 
 export class Hina extends Character {
-  state = 'idle'
+  state = ['idle']
   public source
   public fire
   public speed
@@ -34,12 +61,15 @@ export class Hina extends Character {
   public fireUpdate
   public startAction: THREE.AnimationAction | undefined
   public animation: Animation
+  public weapon
   constructor(world: World) {
     super(world)
 
     this.source = ResourceManager.get('Hina-re')
     this.object = clone(this.source.scene)
     this.fire = this.object.getObjectByName('fire_01')
+    this.weapon = this.object.getObjectByName('Hina_Original_Weapon')
+    console.log(this.weapon)
     // const characterFolder = gui.addFolder('Character')
 
     // characterFolder.add(this, 'state').listen()
@@ -60,17 +90,26 @@ export class Hina extends Character {
 
     this.animation = new Animation(this.object, this.source.animations)
 
-    const fireTex = ResourceManager.get('fire')
-    // fireTex.wrapS = fireTex.wrapT = THREE.RepeatWrapping
-    const fireGeo = new THREE.PlaneGeometry(1, 1)
-    fireGeo.translate(0.5, 0, 0)
-    this.fireOffset = new THREE.Vector2(0, 0)
-    this.fireEffect = new THREE.Mesh(fireGeo, genFireMaterial({
+    const fireTex: THREE.Texture = ResourceManager.get('fire')
+    // const fireGeo = new THREE.PlaneGeometry(1, 1)
+    const fireMaterial = new THREE.SpriteMaterial({
       map: fireTex,
-      offset: this.fireOffset,
-      repeat: new THREE.Vector2(0.5, 0.5),
-    }))
-    this.fireEffect.scale.set(0.5, 0.5, 0.5)
+      // alphaMap: fireTex,
+      color: 'crimson',
+    })
+    // fireGeo.translate(0.5, 0, 0)
+    this.fireEffect = new THREE.Sprite(fireMaterial)
+    // this.fireEffect.center.x = 0
+    this.fireOffset = FIRE_FRAME[0]
+    this.fireEffect.geometry.setAttribute('uv', new THREE.BufferAttribute(this.fireOffset, 2))
+    // this.fireEffect = new THREE.Mesh(fireGeo, genFireMaterial({
+    //   map: fireTex,
+    //   offset: this.fireOffset,
+    //   repeat: new THREE.Vector2(0.5, 0.5),
+    // }))
+    // this.fireEffect.position.z = -0.5
+    this.fireEffect.position.copy(this.weapon.position)
+    this.fireEffect.scale.set(0.005, 0.005, 1)
     this.fireEffect.rotateY(Math.PI / 2)
     this.fireUpdate = this.textureAnimation(2, 2, 4, 0.01)
 
@@ -117,9 +156,9 @@ export class Hina extends Character {
   }
 
   moveStart() {
-    if (this.state === 'moving') return
+    if (this.state.includes('moving')) return
 
-    this.state = 'moving'
+    this.state.push('moving')
     this.animation.play(Action.MOVE_ING, 0.3)
     // this.play(Action.MOVE_ING, 0.3)
   }
@@ -128,48 +167,60 @@ export class Hina extends Character {
     this.forward = direct
   }
   moveEnd() {
-    this.state = 'idle'
+    this.state.push('idle')
+    const index = this.state.findIndex(item => item === 'moving')
+    this.state.splice(index, 1)
     this.animation.play(Action.NORMAL_IDLE, 0.3)
     // this.play(Action.NORMAL_IDLE, 0.3)
   }
   async attack() {
     const isFinish = await this.animation.play(Action.NORMAL_ATTACK_ING, 0.3)
     if (!isFinish) return
-    this.object.add(this.fireEffect)
-    this.state = 'attacking'
+    // TODO: muzzle flash
+    // this.weapon.add(this.fireEffect)
+    // this.object.add(this.fireEffect)
+    this.state.push('attacking')
   }
   stop() {
     this.moveEnd()
-    this.object.remove(this.fireEffect)
+    const index = this.state.findIndex(item => item === 'attacking')
+    this.state.splice(index, 1)
+    // this.object.remove(this.fireEffect)
+    // TODO: muzzle flash
+    // this.weapon.remove(this.fireEffect)
   }
   update() {
-    if (this.state === 'moving') {
+    if (this.state.includes('moving')) {
       const delta = this.delta
       const currentSpeed = this.speed * this.animation.getCurrentWeight()
       switch (this.forward) {
         case 'front':
           this.object.position.z -= currentSpeed
-          this.object.quaternion.rotateTowards(DIRECT.FRONT, delta * this.rotateSpeed)
+          // this.object.quaternion.rotateTowards(DIRECT.FRONT, delta * this.rotateSpeed)
           break
-        case 'left':
-          this.object.position.x -= currentSpeed
-          this.object.quaternion.rotateTowards(DIRECT.LEFT, delta * this.rotateSpeed)
-          break
+        // case 'left':
+        //   this.object.position.x -= currentSpeed
+        //   this.object.quaternion.rotateTowards(DIRECT.LEFT, delta * this.rotateSpeed)
+        //   break
         case 'back':
           this.object.position.z += currentSpeed
-          this.object.quaternion.rotateTowards(DIRECT.BACK, delta * this.rotateSpeed)
+          // this.object.quaternion.rotateTowards(DIRECT.BACK, delta * this.rotateSpeed)
           break
-        case 'right':
-          this.object.position.x += currentSpeed
-          this.object.quaternion.rotateTowards(DIRECT.RIGHT, delta * this.rotateSpeed)
-          break
+        // case 'right':
+        //   this.object.position.x += currentSpeed
+        //   this.object.quaternion.rotateTowards(DIRECT.RIGHT, delta * this.rotateSpeed)
+        //   break
       }
     }
     const firePos = new THREE.Vector3()
     this.fire.getWorldPosition(firePos)
-    this.fireEffect.position.copy(firePos)
+    // this.fireEffect.position.copy(this.fire.position)
+    // this.fireEffect.position.copy(firePos)
+    // this.fireEffect.position.y = firePos.y
+    // this.fireEffect.position.x = firePos.x
+    // console.log(firePos, this.fireEffect.position)
 
-    if (this.state === 'attacking') {
+    if (this.state.includes('attacking')) {
       this.attackProcess += this.delta * this.attackSpeed
       if (this.attackProcess >= 1) {
         const bullet = new Bullet(this.world, firePos)
@@ -214,13 +265,15 @@ export class Hina extends Character {
       while (currentTime > duration) {
         currentTime = 0
         ++currentTile
+        this.fireOffset = FIRE_FRAME[currentTile % 4]
+        this.fireEffect.geometry.setAttribute('uv', new THREE.BufferAttribute(this.fireOffset, 2))
 
-        if (currentTile === numTiles) currentTile = 0
+        // if (currentTile === numTiles) currentTile = 0
 
-        const currentColumn = currentTile % tilesHoriz
-        this.fireOffset.x = currentColumn / tilesHoriz
-        const currentRow = Math.floor(currentTile / tilesHoriz)
-        this.fireOffset.y = currentRow / tilesVert
+        // const currentColumn = currentTile % tilesHoriz
+        // this.fireOffset.x = currentColumn / tilesHoriz
+        // const currentRow = Math.floor(currentTile / tilesHoriz)
+        // this.fireOffset.y = currentRow / tilesVert
       }
     }
   }
