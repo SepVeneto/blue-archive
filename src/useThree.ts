@@ -103,6 +103,16 @@ export function useThree(dom: Ref<HTMLElement>) {
 	world.add( pointLight);
   world.add(pointLightHelper)
 
+  const clickPos = new THREE.Mesh(
+    new THREE.BoxGeometry(2, 0, 2),
+    new THREE.MeshBasicMaterial({ color: 'crimson' })
+  )
+  world.add(clickPos)
+
+  const raycaster = new THREE.Raycaster();
+
+
+
 
 
   resourceManager.$on('finish', () => {
@@ -118,8 +128,25 @@ export function useThree(dom: Ref<HTMLElement>) {
 
 
     const target = police.object.position.clone()
-    camera.position.set(target.x, target.y + 1, (target.z + 2))
-    // camera.lookAt(hina)
+    camera.position.set(target.x + 10, target.y + 12, (target.z + 5))
+    camera.lookAt(target)
+
+    document.addEventListener('click', (evt) => {
+      const { clientX, clientY } = evt
+      const center = {
+        x: (clientX / window.innerWidth) * 2 - 1,
+        y: 1 - (clientY / window.innerHeight) * 2,
+      }
+      raycaster.setFromCamera(new THREE.Vector2(center.x, center.y), camera)
+      const intersects = raycaster.intersectObject(floor)
+      if (intersects.length > 0) {
+        const pos = intersects[0].point
+        clickPos.position.setX(pos.x)
+        // clickPos.position.setY(worldVector.z)
+        clickPos.position.setZ(pos.z)
+        police.moveTo(new THREE.Vector2(pos.x, pos.z))
+      }
+    })
 
   })
 

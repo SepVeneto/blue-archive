@@ -29,7 +29,8 @@ export class Character extends Debug {
     mouth_offset: { value: new THREE.Vector2(0.75, 0.25) },
   }
   public mixer: THREE.AnimationMixer | undefined
-  object: any = undefined
+  public startAction: THREE.AnimationAction | undefined
+  object: THREE.Object3D = new THREE.Group()
   public delta: number = 0
   world: World
 
@@ -38,18 +39,6 @@ export class Character extends Debug {
     this.world = world
   }
 
-  setMouth(index: number) {
-    this.uniforms.mouth_offset.value = MOUTHS[index]
-  }
-  mixMouth() {
-    const obj = this.object.getObjectByName('Hina_Original_Body_3')
-    const mouthTex = ResourceManager.get('Mouth')
-
-    obj.material.transparent = true
-    createFace(obj.material, this.uniforms)
-    this.uniforms.mouth_texture.value = mouthTex
-    obj.material.needsUpdate = true
-  }
   update() {}
   tick(delta: number) {
     if (!this.mixer) return
@@ -57,6 +46,12 @@ export class Character extends Debug {
     this.delta = delta
     this.mixer.update(delta)
     this.update?.()
+  }
+  executeCrossFade(action: any, duration: number) {
+    setWeight(action, 1)
+
+    action.time = 0
+    this.startAction?.crossFadeTo?.(action, duration, false)
   }
   // 获取Group的尺寸
   getGroupSize() {
@@ -77,4 +72,10 @@ export class Character extends Debug {
 
     return bbox;
   }
+}
+
+function setWeight(action: THREE.AnimationAction, weight: number) {
+  action.enabled = true
+  action.setEffectiveTimeScale(1)
+  action.setEffectiveWeight(weight)
 }

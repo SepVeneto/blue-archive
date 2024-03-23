@@ -59,7 +59,6 @@ export class Hina extends Character {
   public fireOffset
   public fireEffect
   public fireUpdate
-  public startAction: THREE.AnimationAction | undefined
   public animation: Animation
   public weapon
   constructor(world: World) {
@@ -115,7 +114,7 @@ export class Hina extends Character {
 
     // this.world.add(this.fireEffect)
 
-    this.mixMouth()
+    // this.mixMouth()
 
     // const action = this.mixer?.clipAction(this.animations[Action.NORMAL_IDLE])
     // const mixer = this.animation.mixer

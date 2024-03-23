@@ -18,15 +18,26 @@ export class Animation {
     })
   }
   getAction(index: AnimationIndex) {
-    const clip = typeof index === 'number' ? this.clips[index] : this.collect[index]
+    const clip = this.getClip(index)
     return this.mixer.clipAction(clip)
+  }
+  getClip(index: AnimationIndex) {
+    return typeof index === 'number' ? this.clips[index] : this.collect[index]
   }
   getCurrentWeight() {
     return this.current.action?.getEffectiveWeight() || 0
   }
   play(index: AnimationIndex, duration = 1) {
-    this.current.cancel?.('interrupt action')
     return new Promise((resolve, reject) => {
+      const clip = this.getClip(index)
+      // 防止不同操作触发时处于同一个动画，导致过渡时出现TPose的情况
+      if (this.current.action && clip.name === this.current.action.getClip().name) {
+        resolve(false)
+        return
+      } else {
+        this.current.cancel?.('interrupt action')
+      }
+
       const action = this.getAction(index)
       action.play()
 
