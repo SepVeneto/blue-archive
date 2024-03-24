@@ -77,12 +77,19 @@ let hina: Hina
 let world: World
 
 const resourceManager = new ResourceManager()
-export function useThree(dom: Ref<HTMLElement>) {
+export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: Ref<HTMLCanvasElement>) {
   const scene = new THREE.Scene();
   world = new World(scene)
-  const camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 200 * 100);
-  camera.zoom = 0.5
-  // camera.updateProjectionMatrix()
+  const camera = new THREE.PerspectiveCamera( 50, 2, 5, 100);
+  // camera.zoom = 0.5
+  camera.position.set(0, 10, 20)
+  const cameraHelper = new THREE.CameraHelper(camera)
+  world.add(cameraHelper)
+
+  const cameraObserve = new THREE.PerspectiveCamera(60, 2, 0.1, 500)
+  cameraObserve.position.set(40, 10, 30)
+  cameraObserve.lookAt(0, 5, 0)
+  // world.add(cameraObserve)
 
   const ambientLight = new THREE.AmbientLight(0xFFFFFF)
   world.add(ambientLight)
@@ -91,9 +98,9 @@ export function useThree(dom: Ref<HTMLElement>) {
   world.add(directionLight)
   world.add(new THREE.DirectionalLightHelper(directionLight, 1))
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize( window.innerWidth, window.innerHeight );
-  renderer.shadowMap.enabled = true
+  const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas.value });
+  // renderer.setSize( window.innerWidth, window.innerHeight );
+  // renderer.shadowMap.enabled = true
   const floor = createFloor()
   world.add(floor)
   world.add(new THREE.AxesHelper(140))
@@ -118,18 +125,27 @@ export function useThree(dom: Ref<HTMLElement>) {
   resourceManager.$on('finish', () => {
     // hina = new ChHina(world)
     const police = new Police(world)
-    // hina.add(camera)
+    // police.add(camera)
     // world.add(hina)
-    police.add(camera)
     world.add(police)
 
     // const geometry = new THREE.CapsuleGeometry(1, 1, 1, 8)
     // scene.add(new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xff0000 })))
 
-
     const target = police.object.position.clone()
-    camera.position.set(target.x + 10, target.y + 12, (target.z + 5))
+    // camera.position.set(target.x + 10, target.y + 12, (target.z + 5))
     camera.lookAt(target)
+
+    /**
+     * TODO: 人物移动的时候把位置的偏移量直接叠加到camera上
+     */
+    world.register(() => {
+      // const target = police.object.position.clone()
+      // // camera.position.set(target.x + 10, target.y + 12, (target.z + 5))
+      // camera.position.setX(police.x + 10)
+      // camera.position.setZ(police.z + 5)
+      // camera.lookAt(target)
+    })
 
     document.addEventListener('click', (evt) => {
       const { clientX, clientY } = evt
@@ -154,63 +170,86 @@ export function useThree(dom: Ref<HTMLElement>) {
 
   let i = 0
   function animate() {
-	  requestAnimationFrame( animate );
+    resizeRendererToDisplaySize(renderer)
+
+    renderer.setScissorTest(true)
+
+    {
+      const aspect = setScissorForElement(dom.value)
+      camera.aspect = aspect
+      camera.updateProjectionMatrix()
+      cameraHelper.update()
+      cameraHelper.visible = false
+
+      renderer.render(scene, camera)
+    }
+
+    {
+      const aspect = setScissorForElement(obs.value)
+      cameraObserve.aspect = aspect
+      cameraObserve.updateProjectionMatrix()
+      cameraHelper.visible = true
+
+      renderer.render(scene, cameraObserve)
+    }
+
     const delta = clock.getDelta()
     world.tick(delta)
 
-	  renderer.render( scene, camera );
+	  requestAnimationFrame( animate );
+
+	  // renderer.render( scene, camera );
   }
 
   let controls
+  let controlObserve
 
-  onMounted(async () => {
-    document.addEventListener('keydown', (evt) => {
-      switch (evt.key.toLowerCase()) {
-        case 'w':
-          hina.turn('front')
-          hina.moveStart()
-          break
-        case 'a':
-          // hina.turn('left')
-          // hina.moveStart()
-          break
-        case 's':
-          hina.turn('back')
-          hina.moveStart()
-          break
-        case 'd':
-          // hina.turn('right')
-          // hina.moveStart()
-          break
-      }
-    })
-    document.addEventListener('keyup', (evt) => {
-      switch (evt.key.toLowerCase()) {
-        case 'w':
-        case 'a':
-        case 's':
-        case 'd':
-        hina.moveEnd()
-        break
-      }
-    })
-    document.addEventListener('mousedown', (evt) => {
-      evt.button === 0 && hina?.attack()
-    })
-    document.addEventListener('mouseup', (evt) => {
-      evt.button === 0 && hina?.stop()
-    })
-    dom.value.appendChild( renderer.domElement );
-    controls = new OrbitControls(camera, renderer.domElement)
+  // onMounted(async () => {
+    controls = new OrbitControls(camera, dom.value)
     controls.mouseButtons = {
       LEFT: undefined,
       MIDDLE: undefined,
       RIGHT: THREE.MOUSE.ROTATE
     }
+    controlObserve = new OrbitControls(cameraObserve, obs.value)
+    // document.querySelector('#wrap')?.appendChild(renderer.domElement)
+    requestAnimationFrame(animate);
+  // })
+  // onUnmounted(() => {
+  //   dom.value?.removeChild(renderer.domElement)
+  // })
 
-    animate();
-  })
-  onUnmounted(() => {
-    dom.value?.removeChild(renderer.domElement)
-  })
+  function setScissorForElement(elm: HTMLElement) {
+    const canvasRect = canvas.value.getBoundingClientRect()
+    const elemRect = elm.getBoundingClientRect()
+
+    const right = Math.min(elemRect.right, canvasRect.right) - canvasRect.left
+    const left = Math.max(0, elemRect.left - canvasRect.left)
+    const bottom = Math.min(elemRect.bottom, canvasRect.bottom) - canvasRect.top
+    const top = Math.max(0, elemRect.top - canvasRect.top)
+    const width = Math.min(canvasRect.width, right - left)
+    const height = Math.min(canvasRect.height, bottom - top)
+
+    const positiveYUpBottom = canvasRect.height - bottom
+    renderer.setScissor(left, positiveYUpBottom, width, height)
+    renderer.setViewport(left, positiveYUpBottom, width, height)
+
+    return width / height
+  }
+
+  	function resizeRendererToDisplaySize( renderer: any ) {
+
+		const canvas = renderer.domElement;
+		const width = canvas.clientWidth;
+		const height = canvas.clientHeight;
+		const needResize = canvas.width !== width || canvas.height !== height;
+		if ( needResize ) {
+
+			renderer.setSize( width, height, false );
+
+		}
+
+		return needResize;
+
+	}
 }

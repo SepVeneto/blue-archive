@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useThree } from './useThree'
 const threeRef = ref()
+const observerRef = ref()
+const canvasRef = ref()
 
-useThree(threeRef)
+onMounted(() => {
+  useThree(threeRef, observerRef, canvasRef)
+})
 </script>
 
 <template>
-  <div ref="threeRef">
+  <canvas ref="canvasRef" style="width: 100%; height: 1318px" />
+  <div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex;">
+    <div ref="threeRef" style="width: 100%; height: 100%;">
     
+    </div>
+    <div ref="observerRef" style="width: 100%; height: 100%;"></div>
   </div>
 </template>
 

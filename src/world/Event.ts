@@ -4,6 +4,7 @@ export class World extends Debug {
   static children = null
   public scene: THREE.Scene
   public children: any[]
+  private updateFns: (() => void)[] = []
   constructor(scene: THREE.Scene) {
     super()
     this.scene = scene
@@ -17,7 +18,12 @@ export class World extends Debug {
   remove(obj: any) {
     this.scene.remove(obj.object ? obj.object : obj)
   }
+  register(fn: () => void) {
+    this.updateFns.push(fn)
+  }
   tick(delta: number) {
+    this.updateFns.forEach(fn => fn())
+
     this.children.forEach((obj, index) => {
       const res = obj.tick && obj.tick(delta)
       if (res === false) {

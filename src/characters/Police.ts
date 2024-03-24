@@ -8,6 +8,7 @@ import * as THREE from 'three'
 export class Police extends Character {
   POSITION_THRESOLD = 0.5
   public speed = 5
+  public rotate = 1
   public source
   public animations
   public animation: Animation
@@ -76,5 +77,10 @@ export class Police extends Character {
     const dist = Math.sqrt(offsetX * offsetX + offsetY * offsetY)
     this.offset.x = offsetX / dist
     this.offset.y = offsetY / dist
+
+    const angle = Math.asin(this.offset.x / dist)
+    console.log(this.offset.x, dist, angle * 180 / Math.PI)
+    // this.object.lookAt(this.target.x, this.object.position.y, this.target.z)
+    this.object.rotateY(angle * 180 / Math.PI)
   }
 }
