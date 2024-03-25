@@ -12,6 +12,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { Police } from './characters/Police';
+import { Camera } from './world/Camera';
 // import './utils/gui'
 
 let isAnimatePlay = false
@@ -80,16 +81,14 @@ const resourceManager = new ResourceManager()
 export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: Ref<HTMLCanvasElement>) {
   const scene = new THREE.Scene();
   world = new World(scene)
-  const camera = new THREE.PerspectiveCamera( 50, 2, 5, 100);
-  // camera.zoom = 0.5
-  camera.position.set(0, 10, 20)
-  const cameraHelper = new THREE.CameraHelper(camera)
-  world.add(cameraHelper)
+  const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas.value });
+  renderer.shadowMap.enabled = true
+
+  const camera = new Camera(world, renderer)
 
   const cameraObserve = new THREE.PerspectiveCamera(60, 2, 0.1, 500)
   cameraObserve.position.set(40, 10, 30)
   cameraObserve.lookAt(0, 5, 0)
-  // world.add(cameraObserve)
 
   const ambientLight = new THREE.AmbientLight(0xFFFFFF)
   world.add(ambientLight)
@@ -98,9 +97,6 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
   world.add(directionLight)
   world.add(new THREE.DirectionalLightHelper(directionLight, 1))
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas.value });
-  // renderer.setSize( window.innerWidth, window.innerHeight );
-  // renderer.shadowMap.enabled = true
   const floor = createFloor()
   world.add(floor)
   world.add(new THREE.AxesHelper(140))
@@ -121,12 +117,16 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
 
 
 
+  let controls
 
   resourceManager.$on('finish', () => {
     // hina = new ChHina(world)
     const police = new Police(world)
+
+    camera.setFollow(police)
     // police.add(camera)
     // world.add(hina)
+    world.add(camera)
     world.add(police)
 
     // const geometry = new THREE.CapsuleGeometry(1, 1, 1, 8)
@@ -134,17 +134,18 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
 
     const target = police.object.position.clone()
     // camera.position.set(target.x + 10, target.y + 12, (target.z + 5))
-    camera.lookAt(target)
+    camera.instance.lookAt(target)
 
     /**
      * TODO: 人物移动的时候把位置的偏移量直接叠加到camera上
      */
     world.register(() => {
-      // const target = police.object.position.clone()
+      const target = police.object.position.clone()
+      controls.target = target
       // // camera.position.set(target.x + 10, target.y + 12, (target.z + 5))
       // camera.position.setX(police.x + 10)
       // camera.position.setZ(police.z + 5)
-      // camera.lookAt(target)
+      // camera.instance.lookAt(target)
     })
 
     document.addEventListener('click', (evt) => {
@@ -153,7 +154,7 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
         x: (clientX / window.innerWidth) * 2 - 1,
         y: 1 - (clientY / window.innerHeight) * 2,
       }
-      raycaster.setFromCamera(new THREE.Vector2(center.x, center.y), camera)
+      raycaster.setFromCamera(new THREE.Vector2(center.x, center.y), camera.instance)
       const intersects = raycaster.intersectObject(floor)
       if (intersects.length > 0) {
         const pos = intersects[0].point
@@ -176,19 +177,19 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
 
     {
       const aspect = setScissorForElement(dom.value)
-      camera.aspect = aspect
-      camera.updateProjectionMatrix()
-      cameraHelper.update()
-      cameraHelper.visible = false
+      camera.instance.aspect = aspect
+      camera.instance.updateProjectionMatrix()
+      camera.helper.update()
+      camera.helper.visible = false
 
-      renderer.render(scene, camera)
+      renderer.render(scene, camera.instance)
     }
 
     {
       const aspect = setScissorForElement(obs.value)
       cameraObserve.aspect = aspect
       cameraObserve.updateProjectionMatrix()
-      cameraHelper.visible = true
+      camera.helper.visible = true
 
       renderer.render(scene, cameraObserve)
     }
@@ -201,20 +202,17 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
 	  // renderer.render( scene, camera );
   }
 
-  let controls
   let controlObserve
 
-  // onMounted(async () => {
-    controls = new OrbitControls(camera, dom.value)
-    controls.mouseButtons = {
-      LEFT: undefined,
-      MIDDLE: undefined,
-      RIGHT: THREE.MOUSE.ROTATE
-    }
-    controlObserve = new OrbitControls(cameraObserve, obs.value)
-    // document.querySelector('#wrap')?.appendChild(renderer.domElement)
-    requestAnimationFrame(animate);
-  // })
+  controls = new OrbitControls(camera.instance, dom.value)
+  controls.mouseButtons = {
+    LEFT: undefined,
+    MIDDLE: undefined,
+    RIGHT: THREE.MOUSE.ROTATE
+  }
+  controlObserve = new OrbitControls(cameraObserve, obs.value)
+  // document.querySelector('#wrap')?.appendChild(renderer.domElement)
+  requestAnimationFrame(animate);
   // onUnmounted(() => {
   //   dom.value?.removeChild(renderer.domElement)
   // })

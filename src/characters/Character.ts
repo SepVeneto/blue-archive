@@ -39,6 +39,22 @@ export class Character extends Debug {
     this.world = world
   }
 
+  get position() {
+    return this.object.position
+  }
+  get x() {
+    return this.object.position.x
+  }
+  get z() {
+    return this.object.position.z
+  }
+  set x(value: number) {
+    this.object.position.x = value
+  }
+  set z(value: number) {
+    this.object.position.z = value
+  }
+
   update() {}
   tick(delta: number) {
     if (!this.mixer) return

@@ -16,7 +16,7 @@ const RESOURCE_MAP = [
   {
     name: 'Police',
     type: 'gltf',
-    src: '/character.glb'
+    src: '/police.glb'
   },
   {
     name: 'fire',
