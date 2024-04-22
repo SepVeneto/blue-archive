@@ -13,10 +13,8 @@ onMounted(() => {
 <template>
   <canvas ref="canvasRef" style="width: 100%; height: 1318px" />
   <div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex;">
-    <div ref="threeRef" style="width: 100%; height: 100%;">
-    
-    </div>
-    <div ref="observerRef" style="width: 100%; height: 100%;"></div>
+    <div ref="threeRef" style="width: 100%; height: 100%;" />
+    <!-- <div ref="observerRef" style="width: 100%; height: 100%;"></div> -->
   </div>
 </template>
 

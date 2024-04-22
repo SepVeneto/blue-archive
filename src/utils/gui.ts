@@ -4,7 +4,7 @@ export const settings = {
 
 }
 
-const gui = new GUI()
+export const gui = new GUI()
 
 export const bullet = {
   radius: 0.02,

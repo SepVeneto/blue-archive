@@ -15,23 +15,6 @@ import { Police } from './characters/Police';
 import { Camera } from './world/Camera';
 // import './utils/gui'
 
-let isAnimatePlay = false
-let mixer
-let animations = []
-
-// const settings = {
-//   'show skeleton': false,
-//   // 'cafe idle': playCafeIdle,
-//   // 'cafe walk': () => hina.play(Hina.CAFE_WALK),
-//   // 'cafe reaction': playCafeReaction,
-//   // 'ex': playEx,
-//   // 'move': playMove,
-//   'mouth': 0,
-//   'modify callsign weight': 0,
-//   'modify moveing weight': 0,
-//   'modify endstand weight': 1,
-//   'metalness': 1,
-// }
 const mouths = [
   new THREE.Vector2(0, 0),
   new THREE.Vector2(0.25, 0),
@@ -54,22 +37,6 @@ const uniforms = {
   mouth_texture: { value: null },
   mouth_offset: { value: new THREE.Vector2(0.75, 0.25) },
 }
-// gui.add(settings, 'cafe idle')
-// gui.add(settings, 'cafe walk')
-// gui.add(settings, 'cafe reaction')
-// gui.add(settings, 'ex')
-// gui.add(settings, 'move')
-// gui.add(settings, 'modify callsign weight', 0, 1, 0.01).listen()
-// gui.add(settings, 'modify moveing weight', 0, 1, 0.01).listen()
-// gui.add(settings, 'modify endstand weight', 0, 1, 0.01).listen()
-
-// gui.add(settings, 'mouth', mouths.reduce((obj, curr, i) => {
-//   obj[i] = curr
-//   return obj
-// }, {})).onChange(val => {
-//   uniforms.mouth_offset.value = val
-//   // m.needsUpdate = true
-// })
 
 let callsign
 let moveing
@@ -86,9 +53,9 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
 
   const camera = new Camera(world, renderer)
 
-  const cameraObserve = new THREE.PerspectiveCamera(60, 2, 0.1, 500)
-  cameraObserve.position.set(40, 10, 30)
-  cameraObserve.lookAt(0, 5, 0)
+  // const cameraObserve = new THREE.PerspectiveCamera(60, 2, 0.1, 500)
+  // cameraObserve.position.set(40, 10, 30)
+  // cameraObserve.lookAt(0, 5, 0)
 
   const ambientLight = new THREE.AmbientLight(0xFFFFFF)
   world.add(ambientLight)
@@ -117,7 +84,7 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
 
 
 
-  let controls
+  let controls: OrbitControls
 
   resourceManager.$on('finish', () => {
     // hina = new ChHina(world)
@@ -136,9 +103,6 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
     // camera.position.set(target.x + 10, target.y + 12, (target.z + 5))
     camera.instance.lookAt(target)
 
-    /**
-     * TODO: 人物移动的时候把位置的偏移量直接叠加到camera上
-     */
     world.register(() => {
       const target = police.object.position.clone()
       controls.target = target
@@ -173,26 +137,26 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
   function animate() {
     resizeRendererToDisplaySize(renderer)
 
-    renderer.setScissorTest(true)
+    // renderer.setScissorTest(true)
 
     {
-      const aspect = setScissorForElement(dom.value)
-      camera.instance.aspect = aspect
-      camera.instance.updateProjectionMatrix()
-      camera.helper.update()
+      // const aspect = setScissorForElement(dom.value)
+      // camera.instance.aspect = aspect
+      // camera.instance.updateProjectionMatrix()
+      // camera.helper.update()
       camera.helper.visible = false
 
       renderer.render(scene, camera.instance)
     }
 
-    {
-      const aspect = setScissorForElement(obs.value)
-      cameraObserve.aspect = aspect
-      cameraObserve.updateProjectionMatrix()
-      camera.helper.visible = true
+    // {
+    //   const aspect = setScissorForElement(obs.value)
+    //   cameraObserve.aspect = aspect
+    //   cameraObserve.updateProjectionMatrix()
+    //   camera.helper.visible = true
 
-      renderer.render(scene, cameraObserve)
-    }
+    //   renderer.render(scene, cameraObserve)
+    // }
 
     const delta = clock.getDelta()
     world.tick(delta)
@@ -210,7 +174,7 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
     MIDDLE: undefined,
     RIGHT: THREE.MOUSE.ROTATE
   }
-  controlObserve = new OrbitControls(cameraObserve, obs.value)
+  // controlObserve = new OrbitControls(cameraObserve, obs.value)
   // document.querySelector('#wrap')?.appendChild(renderer.domElement)
   requestAnimationFrame(animate);
   // onUnmounted(() => {

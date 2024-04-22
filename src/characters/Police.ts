@@ -4,6 +4,7 @@ import { World } from '../world/Event'
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils'
 import { Animation } from '@/Animation'
 import * as THREE from 'three'
+import { gui } from '../utils/gui'
 
 export class Police extends Character {
   POSITION_THRESOLD = 0.5
@@ -18,6 +19,18 @@ export class Police extends Character {
     super(world)
     this.source = ResourceManager.get('Police')
     this.object = clone(this.source.scene)
+    gui.add(this.object.rotation, 'x').onChange((x: number) => {
+      const { y, z } = this.object.rotation
+      this.object.rotation.set(x, y, z)
+    })
+    gui.add(this.object.rotation, 'y').onChange((y: number) => {
+      const { x, z } = this.object.rotation
+      this.object.rotation.set(x, y, z)
+    })
+    gui.add(this.object.rotation, 'z').onChange((z: number) => {
+      const { x, y  } = this.object.rotation
+      this.object.rotation.set(x, y, z)
+    })
 
     this.animations = this.source.animations
     this.animation = new Animation(this.object, this.source.animations)
@@ -79,8 +92,10 @@ export class Police extends Character {
     this.offset.y = offsetY / dist
 
     const angle = Math.asin(this.offset.x / dist)
-    console.log(this.offset.x, dist, angle * 180 / Math.PI)
     // this.object.lookAt(this.target.x, this.object.position.y, this.target.z)
-    this.object.rotateY(angle * 180 / Math.PI)
+    const newRotate = angle * 180 / Math.PI
+    const rotation = this.object.rotation
+    console.log(rotation.y, newRotate)
+    this.object.rotation.set(rotation.x, rotation.y - newRotate, rotation.z)
   }
 }
