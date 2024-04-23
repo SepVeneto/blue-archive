@@ -22,15 +22,15 @@ export class Police extends Character {
     gui.add(this.object.rotation, 'x').onChange((x: number) => {
       const { y, z } = this.object.rotation
       this.object.rotation.set(x, y, z)
-    })
+    }).listen(true)
     gui.add(this.object.rotation, 'y').onChange((y: number) => {
       const { x, z } = this.object.rotation
       this.object.rotation.set(x, y, z)
-    })
+    }).listen(true)
     gui.add(this.object.rotation, 'z').onChange((z: number) => {
       const { x, y  } = this.object.rotation
       this.object.rotation.set(x, y, z)
-    })
+    }).listen(true)
 
     this.animations = this.source.animations
     this.animation = new Animation(this.object, this.source.animations)
@@ -91,11 +91,7 @@ export class Police extends Character {
     this.offset.x = offsetX / dist
     this.offset.y = offsetY / dist
 
-    const angle = Math.asin(this.offset.x / dist)
-    // this.object.lookAt(this.target.x, this.object.position.y, this.target.z)
-    const newRotate = angle * 180 / Math.PI
-    const rotation = this.object.rotation
-    console.log(rotation.y, newRotate)
-    this.object.rotation.set(rotation.x, rotation.y - newRotate, rotation.z)
+    const radius = Math.atan2(this.offset.x, this.offset.y)
+    this.object.rotation.y = radius
   }
 }
