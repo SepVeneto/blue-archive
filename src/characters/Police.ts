@@ -5,6 +5,7 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils'
 import { Animation } from '@/Animation'
 import * as THREE from 'three'
 import { gui } from '../utils/gui'
+import { Weapon } from "@/weapon";
 
 export class Police extends Character {
   POSITION_THRESOLD = 0.5
@@ -15,6 +16,7 @@ export class Police extends Character {
   public animation: Animation
   private target?: THREE.Vector2
   private offset = new THREE.Vector2()
+  public equipments: Weapon[] = []
   constructor(world: World) {
     super(world)
     this.source = ResourceManager.get('Police')
@@ -63,6 +65,10 @@ export class Police extends Character {
   }
 
   update() {
+    this.equipments.forEach(item => {
+      item.update()
+    })
+
     if (!this.target) return
 
     if (this.isTarget(this.target)) {
@@ -93,5 +99,12 @@ export class Police extends Character {
 
     const radius = Math.atan2(this.offset.x, this.offset.y)
     this.object.rotation.y = radius
+  }
+
+  equip(weapon: Weapon) {
+    const center = new THREE.Vector2(this.x, this.z)
+    weapon.init(center)
+    this.equipments.push(weapon)
+    this.object.add(weapon.group)
   }
 }

@@ -13,6 +13,7 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
 import { Police } from './characters/Police';
 import { Camera } from './world/Camera';
+import { Base } from './weapon/base';
 // import './utils/gui'
 
 const mouths = [
@@ -96,12 +97,14 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
     world.add(camera)
     world.add(police)
 
+    police.equip(new Base(4))
+
     // const geometry = new THREE.CapsuleGeometry(1, 1, 1, 8)
     // scene.add(new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xff0000 })))
 
     const target = police.object.position.clone()
     // camera.position.set(target.x + 10, target.y + 12, (target.z + 5))
-    camera.instance.lookAt(target)
+    camera.object.lookAt(target)
 
     world.register(() => {
       const target = police.object.position.clone()
@@ -118,7 +121,7 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
         x: (clientX / window.innerWidth) * 2 - 1,
         y: 1 - (clientY / window.innerHeight) * 2,
       }
-      raycaster.setFromCamera(new THREE.Vector2(center.x, center.y), camera.instance)
+      raycaster.setFromCamera(new THREE.Vector2(center.x, center.y), camera.object)
       const intersects = raycaster.intersectObject(floor)
       if (intersects.length > 0) {
         const pos = intersects[0].point
@@ -146,7 +149,7 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
       // camera.helper.update()
       camera.helper.visible = false
 
-      renderer.render(scene, camera.instance)
+      renderer.render(scene, camera.object)
     }
 
     // {
@@ -168,7 +171,7 @@ export function useThree(dom: Ref<HTMLElement>, obs: Ref<HTMLElement>, canvas: R
 
   let controlObserve
 
-  controls = new OrbitControls(camera.instance, dom.value)
+  controls = new OrbitControls(camera.object, dom.value)
   controls.mouseButtons = {
     LEFT: undefined,
     MIDDLE: undefined,

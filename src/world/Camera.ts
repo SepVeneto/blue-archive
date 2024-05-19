@@ -11,7 +11,7 @@ type Follower = {
 export class Camera {
   public world: World
   public renderer: THREE.Renderer
-  public instance: THREE.PerspectiveCamera
+  public object: THREE.PerspectiveCamera
   public controls?: OrbitControls
   public helper: THREE.CameraHelper
   public follower?: Follower
@@ -19,19 +19,19 @@ export class Camera {
   constructor(world: World, renderer: THREE.Renderer) {
     this.world = world
     this.renderer = renderer
-    this.instance = new THREE.PerspectiveCamera( 50, 2, 5, 100);
+    this.object = new THREE.PerspectiveCamera( 50, 2, 5, 100);
 
-    this.helper = new THREE.CameraHelper(this.instance)
+    this.helper = new THREE.CameraHelper(this.object)
     this.world.add(this.helper)
 
     this.setPosition()
   }
 
   setPosition() {
-    this.instance.position.set(0, 10, 20)
+    this.object.position.set(0, 10, 20)
   }
   setControls(dom: HTMLElement) {
-    this.controls = new OrbitControls(this.instance, dom)
+    this.controls = new OrbitControls(this.object, dom)
     this.controls.mouseButtons = {
       LEFT: undefined,
       MIDDLE: undefined,
@@ -58,9 +58,9 @@ export class Camera {
         current[1] - this.follower.previous[1],
       ] as [number, number]
       // console.log([...offset])
-      this.instance.position.x += offset[0]
-      this.instance.position.z += offset[1]
-      this.instance.lookAt(this.follower.instance.position)
+      this.object.position.x += offset[0]
+      this.object.position.z += offset[1]
+      this.object.lookAt(this.follower.instance.position)
 
       this.follower.previous = [...current]
     }

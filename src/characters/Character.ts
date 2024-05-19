@@ -30,7 +30,7 @@ export class Character extends Debug {
   }
   public mixer: THREE.AnimationMixer | undefined
   public startAction: THREE.AnimationAction | undefined
-  object: THREE.Object3D = new THREE.Group()
+  protected object: THREE.Object3D = new THREE.Group()
   public delta: number = 0
   world: World
 
